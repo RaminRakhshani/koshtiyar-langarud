@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>کشتی‌یار | پنل‌های نقش‌محور — نسخه ۹</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#15202b;--muted:#657382;--line:#e2e7ec;--brand:#075e54;--brand2:#0b7669;--warn:#fff4d8;--shadow:0 8px 24px #12202b0a}
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.8}
+header{background:linear-gradient(120deg,#064e46,#0b7669);color:#fff;padding:22px max(18px,calc((100% - 1120px)/2));}
+h1{margin:0;font-size:25px}header p{margin:3px 0 0;opacity:.86;font-size:13px}
+main{max-width:1120px;margin:22px auto;padding:0 16px}
+.notice{background:var(--warn);border:1px solid #f0d99b;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+select,button,input{font:inherit;border-radius:10px;padding:10px 12px;border:1px solid var(--line);background:white;color:var(--ink)}
+button{cursor:pointer;background:var(--brand);color:#fff;border-color:var(--brand);font-weight:700}button.secondary{background:#fff;color:var(--brand);border-color:#b8d5d0}button:disabled{opacity:.45;cursor:not-allowed}
+.layout{display:grid;grid-template-columns:230px 1fr;gap:16px}.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}
+aside{padding:12px;height:max-content}.nav{display:flex;flex-direction:column;gap:6px}.nav button{text-align:right;background:transparent;color:var(--ink);border-color:transparent;font-weight:500}.nav button.active{background:#e7f4f1;color:var(--brand);font-weight:700}
+.content{min-width:0}.hero{padding:18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.hero h2{margin:0;font-size:21px}.muted{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}.card{padding:15px}.metric{font-size:26px;font-weight:800;color:var(--brand);line-height:1.4}.label{color:var(--muted);font-size:13px}.section{padding:16px;margin-bottom:14px}.section h3{margin:0 0 10px;font-size:17px}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:520px;font-size:13px}th,td{padding:10px;text-align:right;border-bottom:1px solid var(--line)}th{background:#f7f9fa;color:#52616d}.pill{display:inline-block;border-radius:999px;padding:2px 9px;background:#e8f4f1;color:#075e54;font-size:12px}.pill.gray{background:#edf0f3;color:#53606b}.pill.orange{background:#fff0d5;color:#815b10}.formrow{display:flex;gap:8px;flex-wrap:wrap}.formrow input{flex:1;min-width:130px}.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed #ccd5dc;border-radius:12px}.footer{font-size:12px;color:var(--muted);text-align:center;padding:18px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}header{padding:18px}.hero h2{font-size:18px}}
+@media(max-width:430px){.grid{grid-template-columns:1fr 1fr}.metric{font-size:22px}.nav{grid-template-columns:1fr 1fr}}
+</style></head>
+<body>
+<header><h1>کشتی‌یار</h1><p>سامانه مدیریت مسابقات کشتی — پیش‌نمایش پنل‌های نقش‌محور نسخه ۹</p></header>
+<main>
+<div class="notice"><strong>نسخه نمایشی:</strong> اطلاعات این صفحه نمونه و فقط در همین مرورگر است. ورود واقعی، مجوزهای امن و همگام‌سازی آنلاین هنوز به سرور متصل نشده‌اند. این صفحه برای بررسی جریان کار و ظاهر پنل‌هاست.</div>
+<div class="top"><div><strong>پنل کاربری</strong> <span class="muted">/ انتخاب نقش برای پیش‌نمایش</span></div><div class="formrow"><select id="role" aria-label="نقش کاربر"><option value="manager">مدیر مسابقات</option><option value="weigh">مسئول توزین</option><option value="referee">داور</option><option value="coach">مربی</option><option value="athlete">کشتی‌گیر</option><option value="spectator">تماشاگر</option></select><button id="reset" class="secondary">بازنشانی داده نمونه</button></div></div>
+<div class="layout"><aside class="panel"><div class="nav" id="nav"></div></aside><div class="content">
+<div class="panel hero"><div><h2 id="welcome">داشبورد مدیر مسابقات</h2><div class="muted" id="desc">مدیریت رویداد، ثبت‌نام، جدول و نتایج</div></div><span class="pill">مسابقات نمونه لنگرود</span></div>
+<div class="grid" id="metrics"></div>
+<div class="panel section" id="mainpanel"></div>
+<div class="panel section"><h3>برنامه و نتایج زنده</h3><div class="tablewrap"><table><thead><tr><th>دسته</th><th>مسابقه</th><th>قرمز</th><th>آبی</th><th>وضعیت</th><th>نتیجه</th></tr></thead><tbody id="matches"></tbody></table></div></div>
+</div></div>
+<div class="footer">کشتی‌یار • پیش‌نمایش رابط کاربری • نسخه ۹</div>
+</main>
+<script>
+const data={athletes:[
+{id:1,name:"علی رضایی",team:"شهید املاکی",category:"۶۵ کیلوگرم",weight:64.8,status:"تأیید شده"},
+{id:2,name:"امیر محمدی",team:"لنگرود",category:"۶۵ کیلوگرم",weight:65.1,status:"در انتظار توزین"},
+{id:3,name:"مهدی کریمی",team:"چاف",category:"۷۴ کیلوگرم",weight:73.7,status:"تأیید شده"},
+{id:4,name:"رضا احمدی",team:"کومله",category:"۷۴ کیلوگرم",weight:null,status:"در انتظار توزین"}],
+matches:[
+{cat:"۶۵ کیلوگرم",no:"نیمه‌نهایی ۱",red:"علی رضایی",blue:"امیر محمدی",status:"پایان‌یافته",score:"۸–۴"},
+{cat:"۶۵ کیلوگرم",no:"نیمه‌نهایی ۲",red:"آرمان صادقی",blue:"پارسا نوری",status:"در جریان",score:"۲–۱"},
+{cat:"۷۴ کیلوگرم",no:"یک‌چهارم ۱",red:"مهدی کریمی",blue:"رضا احمدی",status:"برنامه‌ریزی‌شده",score:"—"},
+{cat:"۷۴ کیلوگرم",no:"یک‌چهارم ۲",red:"حسین عباسی",blue:"سینا اکبری",status:"برنامه‌ریزی‌شده",score:"—"}]};
+const views={
+manager:{title:"داشبورد مدیر مسابقات",desc:"مدیریت رویداد، ثبت‌نام، جدول و نتایج",nav:["نمای کلی","ثبت‌نام‌ها","دسته‌های وزنی","جدول مسابقات","گزارش‌ها"],metrics:[["۴","دسته وزنی"],["۲۴","ثبت‌نام"],["۱۲","مسابقه امروز"]],heading:"عملیات مدیر",body:"از این بخش می‌توانید ثبت‌نام‌ها را بررسی کنید، دسته‌ها را مدیریت کنید و جدول مسابقات را برای انتشار آماده کنید.",actions:["بررسی ثبت‌نام‌ها","مدیریت دسته‌ها","آماده‌سازی جدول"]},
+weigh:{title:"پنل مسئول توزین",desc:"ثبت وزن و وضعیت تأیید کشتی‌گیران",nav:["فهرست توزین","ثبت وزن","موارد نیازمند بررسی"],metrics:[["۲۴","نفر ثبت‌نام‌شده"],["۱۸","توزین‌شده"],["۶","باقی‌مانده"]],heading:"ثبت توزین",body:"وزن ثبت‌شده باید توسط مسئول مجاز تأیید شود. در نسخه واقعی، هر تغییر با شناسه کاربر و زمان ثبت می‌شود.",actions:["ثبت وزن نمونه","مشاهده موارد باقی‌مانده"]},
+referee:{title:"پنل داور",desc:"مسابقات تخصیص‌یافته و ثبت نتیجه",nav:["مسابقات من","مسابقه جاری","تاریخچه نتایج"],metrics:[["۳","مسابقه تخصیص‌یافته"],["۱","در جریان"],["۲","پایان‌یافته"]],heading:"ثبت نتیجه مسابقه",body:"فقط مسابقه تخصیص‌یافته به داور قابل ثبت است. نتیجه نهایی باید سمت سرور اعتبارسنجی شود.",actions:["ثبت نتیجه نمونه","مشاهده تاریخچه"]},
+coach:{title:"پنل مربی",desc:"مشاهده تیم، ثبت‌نام و وضعیت ورزشکاران",nav:["تیم من","ثبت‌نام ورزشکار","برنامه مسابقات"],metrics:[["۸","ورزشکار تیم"],["۶","تأیید شده"],["۲","در انتظار بررسی"]],heading:"وضعیت تیم",body:"مربی می‌تواند وضعیت ثبت‌نام و برنامه ورزشکاران تیم خود را پیگیری کند؛ اطلاعات سایر تیم‌ها خصوصی می‌ماند.",actions:["افزودن ورزشکار نمونه","مشاهده برنامه تیم"]},
+athlete:{title:"پنل کشتی‌گیر",desc:"وضعیت ثبت‌نام، توزین و مسابقات خود",nav:["پروفایل من","ثبت‌نام من","مسابقات من"],metrics:[["۱","ثبت‌نام فعال"],["۶۵","کیلوگرم دسته"],["۰","نتیجه جدید"]],heading:"اطلاعات ورزشکار",body:"در نسخه واقعی، ورزشکار فقط اطلاعات و نتایج مرتبط با حساب خودش را می‌بیند.",actions:["نمایش وضعیت ثبت‌نام","نمایش برنامه من"]},
+spectator:{title:"نمای عمومی مسابقات",desc:"مشاهده جدول، برنامه و نتایج منتشرشده",nav:["برنامه امروز","نتایج زنده","مدال‌ها"],metrics:[["۱۲","مسابقه امروز"],["۲","در حال برگزاری"],["۴","دسته وزنی"]],heading:"نتایج عمومی",body:"تماشاگر بدون دسترسی مدیریتی، برنامه و نتایج منتشرشده را مشاهده می‌کند؛ اطلاعات تماس و داده‌های خصوصی نمایش داده نمی‌شوند.",actions:["مشاهده جدول‌ها","نمایش مدال‌ها"]}
+};
+const $=id=>document.getElementById(id);
+function render(){const v=views[$("role").value];$("welcome").textContent=v.title;$("desc").textContent=v.desc;
+$("nav").innerHTML=v.nav.map((n,i)=>`<button class="${i===0?'active':''}" data-nav="${i}">${n}</button>`).join("");
+$("metrics").innerHTML=v.metrics.map(m=>`<div class="card"><div class="metric">${m[0]}</div><div class="label">${m[1]}</div></div>`).join("");
+$("mainpanel").innerHTML=`<h3>${v.heading}</h3><p class="muted">${v.body}</p><div class="formrow">${v.actions.map((a,i)=>`<button class="${i?'secondary':''}" data-action="${i}">${a}</button>`).join("")}</div><p id="feedback" class="muted" aria-live="polite"></p>`;
+$("matches").innerHTML=data.matches.map(m=>`<tr><td>${m.cat}</td><td>${m.no}</td><td>${m.red}</td><td>${m.blue}</td><td><span class="pill ${m.status==="در جریان"?"orange":m.status==="برنامه‌ریزی‌شده"?"gray":""}">${m.status}</span></td><td>${m.score}</td></tr>`).join("");
+$("nav").querySelectorAll("button").forEach(b=>b.onclick=()=>{$("nav").querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("feedback").textContent="بخش «"+b.textContent+"» در این پیش‌نمایش انتخاب شد."});
+$("mainpanel").querySelectorAll("[data-action]").forEach(b=>b.onclick=()=>{$("feedback").textContent="«"+b.textContent+"» در نسخه نمایشی است؛ عملیات واقعی پس از اتصال امن به سرور فعال می‌شود."});
+}
+$("role").addEventListener("change",render);$("reset").onclick=()=>{ $("role").value="manager";render()};render();
+</script></body></html>

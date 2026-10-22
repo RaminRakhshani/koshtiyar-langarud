@@ -674,6 +674,82 @@
 
 </style>
 
+<style>
+  
+/* پیش‌نمایش قرعه‌کشی */
+#draw-preview-panel {
+  margin-top: 28px;
+  padding: 20px;
+  background: #f3faf5;
+  border: 1px solid #d5e9dc;
+  border-radius: 16px;
+}
+
+#draw-preview-panel h3 {
+  margin-top: 0;
+  color: #176b4d;
+}
+
+#draw-preview-panel label {
+  display: block;
+  margin: 12px 0 6px;
+  font-weight: 700;
+}
+
+#draw-preview-panel select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #cadbd0;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+}
+
+#draw-preview-panel button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #18794e;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#draw-preview-result {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #fff;
+  line-height: 1.9;
+}
+
+#draw-preview-athletes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.draw-preview-athlete {
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #dcebe1;
+  border-radius: 10px;
+}
+
+@media (max-width: 640px) {
+  #draw-preview-athletes {
+    grid-template-columns: 1fr;
+  }
+}
+
+</style>
+
 <section id="koshtiyar-login">
   <h2>ورود مدیریت کشتی‌یار</h2>
   <p>برای مدیریت مسابقات وارد حساب مجاز خود شوید.</p>
@@ -823,6 +899,13 @@
       <option value="">ابتدا مسابقه و کشتی‌گیر را انتخاب کن</option>
     </select>
 
+        
+    <label for="registration-category">دستهٔ مسابقه</label>
+    <select id="registration-category" required>
+      <option value="">ابتدا مسابقه را انتخاب کن</option>
+    </select>
+
+
     <button type="submit">ثبت‌نام کشتی‌گیر</button>
   </form>
 
@@ -852,7 +935,6 @@
 
   <div id="registrations-list"></div>
 </section>
-
 
 
 <section id="categories-admin" hidden dir="rtl">
@@ -911,6 +993,27 @@
 
   <h3>دسته‌های مسابقه انتخاب‌شده</h3>
   <div id="categories-list"></div>
+
+  
+  <div id="draw-preview-panel">
+    <h3>پیش‌نمایش قرعه‌کشی</h3>
+
+    <label for="draw-preview-category">انتخاب دسته</label>
+    <select id="draw-preview-category">
+      <option value="">انتخاب دسته برای پیش‌نمایش</option>
+    </select>
+
+    <button type="button" id="draw-preview-button">
+      نمایش پیش‌نمایش
+    </button>
+
+    <div id="draw-preview-result" aria-live="polite">
+      برای مشاهده تعداد نفرات و روش قرعه‌کشی، یک دسته انتخاب کن.
+    </div>
+
+    <div id="draw-preview-athletes"></div>
+  </div>
+
 </section>
 
 
@@ -1935,7 +2038,60 @@ async function loadRegistrationPanel() {
 
   renderRegistrationAthletes();
   await loadEventRegistrations();
+  await loadRegistrationCategories();
 }
+
+
+async function loadRegistrationCategories() {
+  const eventId = document.getElementById("registration-event").value;
+  const categorySelect = document.getElementById("registration-category");
+
+  categorySelect.replaceChildren(
+    new Option("انتخاب دسته", "")
+  );
+
+  if (!eventId || !registrationIsManager()) {
+    categorySelect.disabled = true;
+    return;
+  }
+
+  const { data, error } = await db
+    .from("event_categories")
+    .select("id, style, age_category, weight_class")
+    .eq("event_id", eventId)
+    .order("style")
+    .order("age_category")
+    .order("weight_class");
+
+  if (error) {
+    categorySelect.disabled = true;
+    const message = document.getElementById("registrations-message");
+    message.textContent = "بارگذاری دسته‌ها ناموفق بود: " + error.message;
+    return;
+  }
+
+  (data || []).forEach((category) => {
+    const styleName =
+      category.style === "freestyle" ? "آزاد" : "فرنگی";
+
+    const label =
+      styleName + " — " +
+      category.age_category + " — " +
+      category.weight_class;
+
+    categorySelect.add(new Option(label, category.id));
+  });
+
+  categorySelect.disabled = false;
+
+  if (!data || data.length === 0) {
+    categorySelect.replaceChildren(
+      new Option("برای این مسابقه دسته‌ای ساخته نشده است", "")
+    );
+    categorySelect.disabled = true;
+  }
+}
+
 
 function renderRegistrationAthletes() {
   const select = document.getElementById("registration-athlete");
@@ -1994,7 +2150,20 @@ async function loadEventRegistrations() {
 
   const { data, error } = await db
     .from("event_registrations")
-    .select("id, event_id, athlete_id, team_id, status, created_at")
+    .select(`
+      id,
+      event_id,
+      athlete_id,
+      team_id,
+      category_id,
+      status,
+      created_at,
+      event_categories (
+        style,
+        age_category,
+        weight_class
+      )
+    `)
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
@@ -2082,12 +2251,32 @@ function renderRegistrationList() {
     const name = document.createElement("strong");
     name.textContent = athlete?.full_name || "کشتی‌گیر نامشخص";
 
+        
     const details = document.createElement("p");
     details.textContent =
       `تیم: ${team?.name || "نامشخص"} | ` +
       `وضعیت: ${statusLabels[registration.status] || registration.status}`;
 
-    card.append(name, details);
+    const category = registration.event_categories;
+
+    const categoryDetails = document.createElement("p");
+
+    if (category) {
+      const styleName =
+        category.style === "freestyle" ? "آزاد" :
+        category.style === "greco" ? "فرنگی" :
+        "نامشخص";
+
+      categoryDetails.textContent =
+        `دسته: ${styleName} | ` +
+        `رده سنی: ${category.age_category} | ` +
+        `وزن: ${category.weight_class}`;
+    } else {
+      categoryDetails.textContent = "دسته: تعیین نشده";
+    }
+
+    card.append(name, details, categoryDetails);
+
 
     const addAction = (label, status) => {
       const button = document.createElement("button");
@@ -2138,7 +2327,7 @@ async function setRegistrationStatus(registration, newStatus) {
   const { data, error } = await db
     .from("event_registrations")
     .update({ status: newStatus })
-    .eq("id", registration.id)
+    .eq("id", registration.id)  
     .select("id");
 
   if (error || !data?.length) {
@@ -2158,12 +2347,23 @@ document.getElementById("registration-form")
 
     const eventId = document.getElementById("registration-event").value;
     const athleteId = document.getElementById("registration-athlete").value;
+    const categoryId = document.getElementById("registration-category").value;
     const message = document.getElementById("registrations-message");
 
     const athlete = allAthletes.find(a => a.id === athleteId);
 
-    if (!eventId || !athleteId || !athlete) {
-      message.textContent = "مسابقه و کشتی‌گیر را انتخاب کن.";
+    if (!eventId) {
+      message.textContent = "مسابقه را انتخاب کن.";
+      return;
+    }
+
+    if (!athleteId || !athlete) {
+      message.textContent = "کشتی‌گیر را انتخاب کن.";
+      return;
+    }
+
+    if (!categoryId) {
+      message.textContent = " دستهٔ کشتی‌گیر را انتخاب کن.";
       return;
     }
 
@@ -2177,6 +2377,7 @@ document.getElementById("registration-form")
           event_id: eventId,
           athlete_id: athleteId,
           team_id: athlete.team_id,
+          category_id: categoryId,
           status: "registered"
         }])
         .select("id");
@@ -2204,8 +2405,13 @@ document.getElementById("registration-form")
     }
   });
 
+
 document.getElementById("registration-event")
-  .addEventListener("change", loadEventRegistrations);
+  .addEventListener("change", async () => {
+    await loadRegistrationCategories();
+    await loadEventRegistrations();
+  });
+
 
 document.getElementById("registration-team")
   .addEventListener("change", renderRegistrationAthletes);
@@ -2335,6 +2541,29 @@ async function loadSelectedEventCategories() {
   categoryRegistrations = registrations || [];
 
   renderManagedCategories();
+
+    
+  const previewSelect = document.getElementById("draw-preview-category");
+  const previousCategoryId = previewSelect.value;
+
+  previewSelect.replaceChildren(
+    new Option("انتخاب دسته برای پیش‌نمایش", "")
+  );
+
+  managedCategories.forEach((category) => {
+    const styleName =
+      category.style === "freestyle" ? "آزاد" : "فرنگی";
+
+    const label =
+      `${styleName} — ${category.age_category} — ${category.weight_class}`;
+
+    previewSelect.add(new Option(label, category.id));
+  });
+
+  if (managedCategories.some(c => c.id === previousCategoryId)) {
+    previewSelect.value = previousCategoryId;
+  }
+
   setCategoriesMessage("دسته‌های مسابقه بارگذاری شدند.");
 }
 
@@ -2489,6 +2718,115 @@ document
     setCategoriesMessage("دسته با موفقیت ایجاد شد.");
     await loadSelectedEventCategories();
   });
+
+
+  
+async function showDrawPreview() {
+  if (!isManager()) return;
+
+  const eventId = document.getElementById("category-event").value;
+  const categoryId = document.getElementById("draw-preview-category").value;
+  const result = document.getElementById("draw-preview-result");
+  const athletesList = document.getElementById("draw-preview-athletes");
+
+  result.textContent = "";
+  athletesList.replaceChildren();
+
+  if (!eventId || !categoryId) {
+    result.textContent = "ابتدا مسابقه و دسته را انتخاب کن.";
+    return;
+  }
+
+  const threshold = Number(
+    document.getElementById("category-threshold").value
+  );
+
+  if (!Number.isInteger(threshold) || threshold < 2) {
+    result.textContent = "حد نصاب باید عدد صحیح و حداقل ۲ باشد.";
+    return;
+  }
+
+  result.textContent = "در حال دریافت فهرست کشتی‌گیران...";
+
+  const { data: registrations, error } = await db
+    .from("event_registrations")
+    .select(`
+      id,
+      status,
+      athletes(full_name),
+      teams(name)
+    `)
+    .eq("event_id", eventId)
+    .eq("category_id", categoryId)
+    .in("status", ["registered", "confirmed"])
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Draw preview error:", error);
+    result.textContent =
+      "دریافت فهرست ناموفق بود: " + error.message;
+    return;
+  }
+
+  const entries = registrations || [];
+  const count = entries.length;
+
+  let method;
+  let explanation;
+
+  if (count < 2) {
+    method = "قرعه‌کشی انجام نمی‌شود";
+    explanation = "برای برگزاری، حداقل ۲ کشتی‌گیر لازم است.";
+  } else if (count < threshold) {
+    method = "دوره‌ای";
+    explanation =
+      "هر کشتی‌گیر با تمام کشتی‌گیران دیگر این دسته مسابقه خواهد داد.";
+  } else {
+    method = "حذفی دوگانه";
+    explanation =
+      "جدول بر اساس دو باخت برای حذف تنظیم خواهد شد؛ جزئیات دورها در مرحله تولید قرعه مشخص می‌شود.";
+  }
+
+  result.textContent =
+    `تعداد کشتی‌گیران: ${count} | ` +
+    `حد نصاب: ${threshold} | ` +
+    `روش پیشنهادی: ${method}. ` +
+    explanation;
+
+  entries.forEach((registration, index) => {
+    const card = document.createElement("div");
+    card.className = "draw-preview-athlete";
+
+    const name = document.createElement("strong");
+    name.textContent =
+      `${index + 1}. ${registration.athletes?.full_name || "نامشخص"}`;
+
+    const team = document.createElement("p");
+    team.textContent =
+      `تیم: ${registration.teams?.name || "نامشخص"}`;
+
+    const status = document.createElement("p");
+    status.textContent =
+      registration.status === "confirmed"
+        ? "وضعیت: تأییدشده"
+        : "وضعیت: ثبت‌شده";
+
+    card.append(name, team, status);
+    athletesList.appendChild(card);
+  });
+}
+
+  document
+    .getElementById("draw-preview-button")
+    .addEventListener("click", showDrawPreview);
+
+  document
+    .getElementById("draw-preview-category")
+    .addEventListener("change", () => {
+      document.getElementById("draw-preview-result").textContent =
+        "برای به‌روزرسانی تعداد نفرات، روی «نمایش پیش‌نمایش» کلیک کن.";
+      document.getElementById("draw-preview-athletes").replaceChildren();
+    });
 
 
 async function restoreSession() {

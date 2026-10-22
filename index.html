@@ -29,7 +29,7 @@
     }
 
     console.log("اتصال موفق بود:", data);
-    alert("اتصال به دیتابیس موفق بود!");
+    // alert("اتصال به دیتابیس موفق بود!");
   }
 
   testKoshtiyarDatabase();
@@ -80,24 +80,98 @@
   }
 </style>
 
-<section id="events-admin">
+<style>
+  #koshtiyar-login, #events-admin {
+    direction: rtl;
+    font-family: sans-serif;
+    max-width: 900px;
+    margin: 25px auto;
+    padding: 20px;
+    color: #172033;
+  }
+  #koshtiyar-login input,
+  #events-admin input,
+  #events-admin select,
+  #koshtiyar-login button,
+  #events-admin button {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px;
+    margin: 6px 0;
+    border-radius: 8px;
+    font: inherit;
+  }
+  #koshtiyar-login input,
+  #events-admin input,
+  #events-admin select {
+    border: 1px solid #cbd5e1;
+  }
+  #koshtiyar-login button,
+  #events-admin button {
+    border: 0;
+    background: #14532d;
+    color: white;
+    cursor: pointer;
+  }
+  #events-admin .event-card {
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 10px 0;
+  }
+  #events-admin .event-card button {
+    width: auto;
+  }
+  #events-admin .admin-form {
+    display: grid;
+    gap: 8px;
+  }
+</style>
+
+<section id="koshtiyar-login">
+  <h2>ورود مدیریت کشتی‌یار</h2>
+  <p>برای مدیریت مسابقات وارد حساب مجاز خود شوید.</p>
+  <form id="login-form">
+    <label for="login-email">ایمیل</label>
+    <input id="login-email" type="email" autocomplete="username"
+      required />
+
+    <label for="login-password">رمز عبور</label>
+    <input id="login-password" type="password"
+      autocomplete="current-password" required />
+
+    <button id="login-button" type="submit">ورود</button>
+  </form>
+  <p id="login-message" role="status"></p>
+</section>
+
+<section id="events-admin" hidden>
   <h2>مدیریت مسابقات کشتی‌یار</h2>
-  <p id="events-message">در حال دریافت مسابقات...</p>
+  <p id="manager-info"></p>
+  <button id="logout-button" type="button">خروج از حساب</button>
+  <p id="events-message" role="status"></p>
 
   <h3>ثبت مسابقه جدید</h3>
   <form id="event-form" class="admin-form">
-    <input id="event-name" placeholder="نام مسابقه" required />
-    <input id="event-location" placeholder="محل برگزاری" required />
+    <label for="event-name">نام مسابقه</label>
+    <input id="event-name" required />
+
+    <label for="event-location">محل برگزاری</label>
+    <input id="event-location" required />
+
     <label for="event-start">تاریخ شروع</label>
     <input id="event-start" type="date" required />
+
     <label for="event-end">تاریخ پایان</label>
     <input id="event-end" type="date" required />
+
     <label for="event-status">وضعیت</label>
     <select id="event-status">
       <option value="draft">پیش‌نویس</option>
       <option value="published">منتشرشده</option>
       <option value="completed">پایان‌یافته</option>
     </select>
+
     <button type="submit">ثبت مسابقه</button>
   </form>
 
@@ -106,10 +180,21 @@
 </section>
 
 <script>
-  // از اتصال db که قبلاً در فایل ساخته‌ای استفاده می‌کنیم.
+  // متغیر db باید قبلاً با Project URL و Publishable Key
+  // ساخته شده باشد. آن را دوباره تعریف نکن.
+
+  const loginForm = document.getElementById("login-form");
+  const loginMessage = document.getElementById("login-message");
+  const loginSection = document.getElementById("koshtiyar-login");
+  const adminSection = document.getElementById("events-admin");
+  const managerInfo = document.getElementById("manager-info");
   const eventForm = document.getElementById("event-form");
   const eventsMessage = document.getElementById("events-message");
   const eventsList = document.getElementById("events-list");
+  const loginButton = document.getElementById("login-button");
+
+  let managerUser = null;
+  let managerRole = null;
 
   const statusNames = {
     draft: "پیش‌نویس",
@@ -117,7 +202,98 @@
     completed: "پایان‌یافته"
   };
 
+  function showSignedOut(message = "") {
+    managerUser = null;
+    managerRole = null;
+    adminSection.hidden = true;
+    loginSection.hidden = false;
+    managerInfo.textContent = "";
+    eventsList.replaceChildren();
+    eventsMessage.textContent = "";
+    loginMessage.textContent = message;
+  }
+
+  async function checkManager(user) {
+    // تا زمان تأیید نقش، پنل بسته می‌ماند.
+    adminSection.hidden = true;
+    loginSection.hidden = false;
+    loginMessage.textContent = "در حال بررسی دسترسی...";
+
+    const { data, error } = await db
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      showSignedOut(
+        "بررسی نقش ناموفق بود. سیاست خواندن نقش کاربر را بررسی کن."
+      );
+      console.error("Role check error:", error.message);
+      return false;
+    }
+
+    if (!data || !["admin", "organizer"].includes(data.role)) {
+      await db.auth.signOut();
+      showSignedOut("این حساب مجوز مدیریت مسابقات را ندارد.");
+      return false;
+    }
+
+    managerUser = user;
+    managerRole = data.role;
+    loginSection.hidden = true;
+    adminSection.hidden = false;
+    managerInfo.textContent =
+      `وارد شده‌اید: ${user.email} | نقش: ${managerRole}`;
+    loginMessage.textContent = "";
+
+    await loadEvents();
+    return true;
+  }
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    loginButton.disabled = true;
+    loginMessage.textContent = "در حال ورود...";
+
+    try {
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+
+      const { data, error } = await db.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        showSignedOut(
+          "ورود انجام نشد. ایمیل، رمز عبور و وضعیت تأیید حساب را بررسی کن."
+        );
+        console.error("Login error:", error.message);
+        return;
+      }
+
+      await checkManager(data.user);
+    } finally {
+      loginButton.disabled = false;
+    }
+  });
+
+  document.getElementById("logout-button").addEventListener(
+    "click",
+    async () => {
+      const { error } = await db.auth.signOut();
+      if (error) {
+        eventsMessage.textContent = "خروج انجام نشد.";
+        return;
+      }
+      showSignedOut("از حساب خارج شدی.");
+    }
+  );
+
   async function loadEvents() {
+    if (!managerUser || !managerRole) return;
+
     eventsMessage.textContent = "در حال دریافت مسابقات...";
     eventsList.replaceChildren();
 
@@ -127,7 +303,8 @@
       .order("start_date", { ascending: true });
 
     if (error) {
-      eventsMessage.textContent = "خطا در دریافت مسابقات: " + error.message;
+      eventsMessage.textContent = "خطا در دریافت مسابقات.";
+      console.error("Load events error:", error.message);
       return;
     }
 
@@ -147,7 +324,7 @@
 
       const details = document.createElement("p");
       details.textContent =
-        `محل: ${event.location || "مشخص نشده"} | ` +
+        `محل: ${event.location || "—"} | ` +
         `شروع: ${event.start_date || "—"} | ` +
         `پایان: ${event.end_date || "—"} | ` +
         `وضعیت: ${statusNames[event.status] || event.status}`;
@@ -164,22 +341,25 @@
       const updateButton = document.createElement("button");
       updateButton.textContent = "ذخیره وضعیت";
       updateButton.addEventListener("click", async () => {
+        if (!managerUser || !managerRole) return;
         updateButton.disabled = true;
 
-        const { error } = await db
-          .from("events")
-          .update({ status: status.value })
-          .eq("id", event.id);
+        try {
+          const { error } = await db
+            .from("events")
+            .update({ status: status.value })
+            .eq("id", event.id);
 
-        updateButton.disabled = false;
+          if (error) {
+            alert("تغییر وضعیت مجاز نبود یا خطا رخ داد.");
+            console.error("Update error:", error.message);
+            return;
+          }
 
-        if (error) {
-          alert("تغییر وضعیت انجام نشد: " + error.message);
-          return;
+          await loadEvents();
+        } finally {
+          updateButton.disabled = false;
         }
-
-        alert("وضعیت به‌روزرسانی شد.");
-        loadEvents();
       });
 
       card.append(title, details, status, updateButton);
@@ -189,6 +369,10 @@
 
   eventForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!managerUser || !managerRole) {
+      showSignedOut("ابتدا وارد حساب مجاز شو.");
+      return;
+    }
 
     const name = document.getElementById("event-name").value.trim();
     const location = document.getElementById("event-location").value.trim();
@@ -204,23 +388,42 @@
     const submitButton = eventForm.querySelector('button[type="submit"]');
     submitButton.disabled = true;
 
-    const { error } = await db.from("events").insert([{
-      name, location, start_date, end_date, status
-    }]);
+    try {
+      const { error } = await db.from("events").insert([{
+        name, location, start_date, end_date, status
+      }]);
 
-    submitButton.disabled = false;
+      if (error) {
+        eventsMessage.textContent =
+          "ثبت انجام نشد؛ مجوزهای RLS و نقش حساب را بررسی کن.";
+        console.error("Insert error:", error.message);
+        return;
+      }
+
+      eventsMessage.textContent = "مسابقه با موفقیت ثبت شد.";
+      eventForm.reset();
+      await loadEvents();
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  async function restoreSession() {
+    const { data, error } = await db.auth.getSession();
 
     if (error) {
-      alert("ثبت مسابقه انجام نشد: " + error.message);
+      showSignedOut("بررسی نشست ورود ناموفق بود.");
       return;
     }
 
-    alert("مسابقه با موفقیت ثبت شد.");
-    eventForm.reset();
-    loadEvents();
-  });
+    if (data.session) {
+      await checkManager(data.session.user);
+    } else {
+      showSignedOut();
+    }
+  }
 
-  loadEvents();
+  restoreSession();
 </script>
 
 <body>

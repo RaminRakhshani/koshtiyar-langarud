@@ -770,6 +770,81 @@
   margin-bottom: 6px;
 }
 
+
+.match-result-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #dce8df;
+}
+
+.match-result-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.match-result-form input,
+.match-result-form select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #cbd8ce;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.match-result-form button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #176b43;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.match-result-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+</style>
+
+<style>
+  
+#category-standings-panel {
+  margin-top: 24px;
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+  background: #ffffff;
+}
+
+.standings-table th,
+.standings-table td {
+  padding: 10px;
+  border: 1px solid #dce8df;
+  text-align: center;
+}
+
+.standings-table th {
+  background: #176b43;
+  color: #ffffff;
+}
+
+.standings-table tbody tr:nth-child(even) {
+  background: #f3f8f4;
+}
+
+#category-standings-panel {
+  overflow-x: auto;
+}
+
 </style>
 
 
@@ -1063,6 +1138,39 @@
     </p>
 
     <div id="draw-matches-list"></div>
+
+    <hr />
+
+    <section id="category-standings-panel" dir="rtl">
+      <h3>جدول رده‌بندی کشتی‌گیران</h3>
+
+      <button type="button" id="refresh-standings-button">
+        به‌روزرسانی رده‌بندی
+      </button>
+
+      <p id="standings-message" role="status" aria-live="polite">
+        برای مشاهده رده‌بندی، یک دسته انتخاب کن.
+      </p>
+
+      <div id="category-standings"></div>
+    </section>
+
+    
+    <hr />
+
+    <section id="draw-finalization-panel" dir="rtl">
+      <h3>وضعیت نهایی دسته</h3>
+
+      <p id="draw-finalization-status" role="status" aria-live="polite">
+        وضعیت دسته پس از انتخاب آن نمایش داده می‌شود.
+      </p>
+
+      <button type="button" id="finalize-draw-button">
+        نهایی‌کردن نتایج دسته
+      </button>
+
+      <p id="draw-finalization-message" role="status" aria-live="polite"></p>
+    </section>
 
   </div>
 
@@ -3053,18 +3161,99 @@ async function loadGeneratedMatches() {
 
       competitors.textContent = `${redName}  ـ  ${blueName}`;
 
-      const score = document.createElement("p");
-      score.textContent =
-        `امتیاز: ${match.red_score} - ${match.blue_score}`;
-
+      
       const status = document.createElement("p");
       status.textContent =
-        match.status === "scheduled" ? "وضعیت: در انتظار برگزاری" :
-        match.status === "completed" ? "وضعیت: پایان‌یافته" :
-        `وضعیت: ${match.status}`;
+        match.status === "scheduled"
+          ? "وضعیت: در انتظار برگزاری"
+          : match.status === "completed"
+            ? "وضعیت: پایان‌یافته"
+            : `وضعیت: ${match.status}`;
 
-      card.append(heading, competitors, score, status);
+      const scoreForm = document.createElement("form");
+      scoreForm.className = "match-result-form";
+      scoreForm.dataset.matchId = match.id;
+
+      const redLabel = document.createElement("label");
+      redLabel.textContent = `امتیاز ${redName} (قرمز)`;
+
+      const redScore = document.createElement("input");
+      redScore.type = "number";
+      redScore.min = "0";
+      redScore.step = "1";
+      redScore.required = true;
+      redScore.name = "red_score";
+      redScore.value = String(match.red_score ?? 0);
+
+      redLabel.append(redScore);
+
+      const blueLabel = document.createElement("label");
+      blueLabel.textContent = `امتیاز ${blueName} (آبی)`;
+
+      const blueScore = document.createElement("input");
+      blueScore.type = "number";
+      blueScore.min = "0";
+      blueScore.step = "1";
+      blueScore.required = true;
+      blueScore.name = "blue_score";
+      blueScore.value = String(match.blue_score ?? 0);
+
+      blueLabel.append(blueScore);
+
+      const winnerLabel = document.createElement("label");
+      winnerLabel.textContent = "برندهٔ مسابقه";
+
+      const winnerSelect = document.createElement("select");
+      winnerSelect.name = "winner_id";
+      winnerSelect.required = true;
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "انتخاب برنده";
+      winnerSelect.append(placeholder);
+
+      const redOption = document.createElement("option");
+      redOption.value = match.athlete_red_id;
+      redOption.textContent = `${redName} (قرمز)`;
+
+      const blueOption = document.createElement("option");
+      blueOption.value = match.athlete_blue_id;
+      blueOption.textContent = `${blueName} (آبی)`;
+
+      winnerSelect.append(redOption, blueOption);
+
+      if (
+        match.winner_id === match.athlete_red_id ||
+        match.winner_id === match.athlete_blue_id
+      ) {
+        winnerSelect.value = match.winner_id;
+      }
+
+      winnerLabel.append(winnerSelect);
+
+      const saveButton = document.createElement("button");
+      saveButton.type = "submit";
+      saveButton.textContent =
+        match.status === "completed"
+          ? "ذخیرهٔ اصلاح نتیجه"
+          : "ثبت نتیجه";
+
+      scoreForm.append(
+        redLabel,
+        blueLabel,
+        winnerLabel,
+        saveButton
+      );
+
+      card.append(
+        heading,
+        competitors,
+        status,
+        scoreForm
+      );
+
       fragment.append(card);
+
     }
 
     list.append(fragment);
@@ -3088,7 +3277,440 @@ async function loadGeneratedMatches() {
     .getElementById("draw-preview-category")
     .addEventListener("change", loadGeneratedMatches);
 
+  
+document
+  .getElementById("draw-matches-list")
+  .addEventListener("submit", async (event) => {
+    const form = event.target;
 
+    if (!form.matches(".match-result-form")) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const message = document.getElementById("draw-matches-message");
+
+    if (!isManager()) {
+      message.textContent =
+        "فقط مدیر یا برگزارکننده می‌تواند نتیجه را ثبت کند.";
+      return;
+    }
+
+    const matchId = form.dataset.matchId;
+    const redScoreInput = form.elements.namedItem("red_score");
+    const blueScoreInput = form.elements.namedItem("blue_score");
+    const winnerInput = form.elements.namedItem("winner_id");
+
+    const redScore = Number(redScoreInput.value);
+    const blueScore = Number(blueScoreInput.value);
+    const winnerId = winnerInput.value;
+
+    if (
+      redScoreInput.value.trim() === "" ||
+      blueScoreInput.value.trim() === "" ||
+      !Number.isSafeInteger(redScore) ||
+      !Number.isSafeInteger(blueScore) ||
+      redScore < 0 ||
+      blueScore < 0
+    ) {
+      message.textContent =
+        "امتیازها باید عدد صحیح و صفر یا بیشتر باشند.";
+      return;
+    }
+
+    if (!winnerId) {
+      message.textContent = "لطفاً برندهٔ مسابقه را انتخاب کن.";
+      return;
+    }
+
+    const buttons = form.querySelectorAll('button[type="submit"]');
+    buttons.forEach(button => button.disabled = true);
+
+    message.textContent = "در حال ذخیرهٔ نتیجه...";
+
+    try {
+      const { data: match, error: readError } = await db
+        .from("matches")
+        .select("id, athlete_red_id, athlete_blue_id, draw_id")
+        .eq("id", matchId)
+        .maybeSingle();
+
+      if (readError) throw readError;
+
+      if (!match || !match.draw_id) {
+        throw new Error(
+          "مسابقه پیدا نشد یا به قرعه‌کشی معتبر متصل نیست."
+        );
+      }
+
+      if (
+        winnerId !== match.athlete_red_id &&
+        winnerId !== match.athlete_blue_id
+      ) {
+        throw new Error(
+          "برنده باید یکی از دو کشتی‌گیر همین مسابقه باشد."
+        );
+      }
+
+      const { data, error } = await db
+        .from("matches")
+        .update({
+          red_score: redScore,
+          blue_score: blueScore,
+          winner_id: winnerId,
+          status: "completed"
+        })
+        .eq("id", matchId)
+        .select("id");
+
+      if (error) throw error;
+
+      if (!data || data.length !== 1) {
+        throw new Error(
+          "نتیجه ذخیره نشد. دسترسی مدیر یا سیاست‌های RLS را بررسی کن."
+        );
+      }
+
+      message.textContent = "نتیجه با موفقیت ذخیره شد.";
+
+      await loadGeneratedMatches();
+      
+      await loadCategoryStandings();
+
+    } catch (error) {
+      console.error("خطا در ذخیرهٔ نتیجه:", error);
+
+      message.textContent =
+        "ذخیرهٔ نتیجه ناموفق بود: " +
+        (error?.message || "خطای نامشخص");
+
+    } finally {
+      buttons.forEach(button => button.disabled = false);
+    }
+  });
+
+  
+async function loadCategoryStandings() {
+  const message = document.getElementById("standings-message");
+  const container = document.getElementById("category-standings");
+
+  const eventId = document.getElementById("category-event").value;
+  const categoryId = document.getElementById("draw-preview-category").value;
+
+  container.replaceChildren();
+
+  if (!eventId || !categoryId) {
+    message.textContent = "ابتدا مسابقه و دسته را انتخاب کن.";
+    return;
+  }
+
+  message.textContent = "در حال محاسبه رده‌بندی...";
+
+  try {
+    // کشتی‌گیران ثبت‌نام‌شده و تأییدشده در همین دسته
+    const { data: registrations, error: registrationError } = await db
+      .from("event_registrations")
+      .select(`
+        athlete_id,
+        athletes (
+          full_name
+        ),
+        teams (
+          name
+        )
+      `)
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .in("status", ["registered", "confirmed"]);
+
+    if (registrationError) throw registrationError;
+
+    // فقط نتایج نهایی همین دسته
+    const { data: matches, error: matchesError } = await db
+      .from("matches")
+      .select(`
+        athlete_red_id,
+        athlete_blue_id,
+        red_score,
+        blue_score,
+        winner_id
+      `)
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .eq("status", "completed")
+      .not("draw_id", "is", null);
+
+    if (matchesError) throw matchesError;
+
+    const standings = new Map();
+
+    for (const registration of registrations || []) {
+      const athleteId = registration.athlete_id;
+
+      standings.set(athleteId, {
+        athleteId,
+        name: registration.athletes?.full_name || "نامشخص",
+        team: registration.teams?.name || "نامشخص",
+        played: 0,
+        wins: 0,
+        losses: 0,
+        pointsFor: 0,
+        pointsAgainst: 0
+      });
+    }
+
+    for (const match of matches || []) {
+      const red = standings.get(match.athlete_red_id);
+      const blue = standings.get(match.athlete_blue_id);
+
+      // فقط آمار کشتی‌گیران ثبت‌نام‌شده در دسته محاسبه شود
+      if (!red || !blue) continue;
+
+      const redScore = Number(match.red_score);
+      const blueScore = Number(match.blue_score);
+
+      red.played++;
+      blue.played++;
+
+      red.pointsFor += redScore;
+      red.pointsAgainst += blueScore;
+
+      blue.pointsFor += blueScore;
+      blue.pointsAgainst += redScore;
+
+      if (match.winner_id === match.athlete_red_id) {
+        red.wins++;
+        blue.losses++;
+      } else if (match.winner_id === match.athlete_blue_id) {
+        blue.wins++;
+        red.losses++;
+      }
+    }
+
+    const rows = [...standings.values()];
+
+    rows.sort((a, b) =>
+      b.wins - a.wins ||
+      (b.pointsFor - b.pointsAgainst) -
+        (a.pointsFor - a.pointsAgainst) ||
+      b.pointsFor - a.pointsFor ||
+      a.name.localeCompare(b.name, "fa")
+    );
+
+    const table = document.createElement("table");
+    table.className = "standings-table";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+
+    const headers = [
+      "رتبه",
+      "کشتی‌گیر",
+      "تیم",
+      "مسابقه",
+      "برد",
+      "باخت",
+      "امتیاز کسب‌شده",
+      "امتیاز واگذارشده"
+    ];
+
+    for (const title of headers) {
+      const th = document.createElement("th");
+      th.scope = "col";
+      th.textContent = title;
+      headerRow.append(th);
+    }
+
+    thead.append(headerRow);
+
+    const tbody = document.createElement("tbody");
+
+    rows.forEach((item, index) => {
+      const tr = document.createElement("tr");
+
+      const values = [
+        index + 1,
+        item.name,
+        item.team,
+        item.played,
+        item.wins,
+        item.losses,
+        item.pointsFor,
+        item.pointsAgainst
+      ];
+
+      for (const value of values) {
+        const td = document.createElement("td");
+        td.textContent = String(value);
+        tr.append(td);
+      }
+
+      tbody.append(tr);
+    });
+
+    table.append(thead, tbody);
+    container.append(table);
+
+    message.textContent =
+      rows.length === 0
+        ? "کشتی‌گیر ثبت‌نام‌شده‌ای در این دسته وجود ندارد."
+        : `تعداد کشتی‌گیران: ${rows.length} | مسابقه‌های پایان‌یافته: ${(matches || []).length}`;
+
+  } catch (error) {
+    console.error("خطا در محاسبه رده‌بندی:", error);
+    message.textContent =
+      "محاسبه رده‌بندی ناموفق بود. جزئیات خطا در Console مرورگر قابل مشاهده است.";
+  }
+}
+
+
+document
+  .getElementById("refresh-standings-button")
+  .addEventListener("click", loadCategoryStandings);
+
+document
+  .getElementById("draw-preview-category")
+  .addEventListener("change", loadCategoryStandings);
+
+
+  
+async function loadDrawFinalizationStatus() {
+  const statusElement = document.getElementById(
+    "draw-finalization-status"
+  );
+
+  const button = document.getElementById("finalize-draw-button");
+  const eventId = document.getElementById("category-event").value;
+  const categoryId = document.getElementById("draw-preview-category").value;
+
+  button.disabled = true;
+
+  if (!eventId || !categoryId) {
+    statusElement.textContent = "ابتدا مسابقه و دسته را انتخاب کن.";
+    return;
+  }
+
+  try {
+    const { data, error } = await db
+      .from("event_category_draws")
+      .select("id, status, draw_type")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      statusElement.textContent = "برای این دسته هنوز قرعه‌کشی تولید نشده است.";
+      return;
+    }
+
+    if (data.status === "completed") {
+      statusElement.textContent = "وضعیت: نهایی‌شده و قفل‌شده";
+      return;
+    }
+
+    if (data.status === "cancelled") {
+      statusElement.textContent = "وضعیت: قرعه‌کشی لغو شده است.";
+      return;
+    }
+
+    const { data: matches, error: matchesError } = await db
+      .from("matches")
+      .select("id, status")
+      .eq("draw_id", data.id);
+
+    if (matchesError) throw matchesError;
+
+    const total = matches.length;
+    const completed = matches.filter(
+      match => match.status === "completed"
+    ).length;
+
+    statusElement.textContent =
+      `وضعیت: در حال برگزاری | مسابقه‌های پایان‌یافته: ${completed} از ${total}`;
+
+    button.disabled = !isManager() || total === 0 || completed !== total;
+
+  } catch (error) {
+    console.error("خطا در دریافت وضعیت دسته:", error);
+    statusElement.textContent = "دریافت وضعیت دسته ناموفق بود.";
+  }
+}
+
+document
+  .getElementById("finalize-draw-button")
+  .addEventListener("click", async () => {
+    const message = document.getElementById(
+      "draw-finalization-message"
+    );
+
+    if (!isManager()) {
+      message.textContent = "فقط مدیر یا برگزارکننده مجاز است.";
+      return;
+    }
+
+    const eventId = document.getElementById("category-event").value;
+    const categoryId = document.getElementById("draw-preview-category").value;
+
+    if (!eventId || !categoryId) {
+      message.textContent = "ابتدا مسابقه و دسته را انتخاب کن.";
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "با نهایی‌کردن این دسته، تغییر یا حذف مسابقه‌های آن در دیتابیس مسدود می‌شود. ادامه می‌دهی؟"
+      )
+    ) {
+      return;
+    }
+
+    const button = document.getElementById("finalize-draw-button");
+    button.disabled = true;
+    message.textContent = "در حال بررسی نتایج...";
+
+    
+    try {
+      message.textContent = "در حال نهایی‌کردن نتایج...";
+
+      const { data, error } = await db.rpc("finalize_category_draw", {
+        p_event_id: eventId,
+        p_category_id: categoryId
+      });
+
+      if (error) throw error;
+
+      if (!data?.success) {
+        throw new Error("نهایی‌کردن نتایج تأیید نشد.");
+      }
+
+      message.textContent =
+        `دسته با موفقیت نهایی شد. تعداد مسابقه‌ها: ${data.total_matches}`;
+
+      await loadDrawFinalizationStatus();
+      await loadGeneratedMatches();
+      await loadCategoryStandings();
+
+    } catch (error) {
+      console.error("خطا در نهایی‌سازی دسته:", error);
+      message.textContent =
+        error?.message || "نهایی‌سازی دسته ناموفق بود.";
+
+      await loadDrawFinalizationStatus();
+
+    } finally {
+      button.disabled = false;
+      await loadDrawFinalizationStatus();
+    }
+  });
+
+document
+  .getElementById("draw-preview-category")
+  .addEventListener("change", loadDrawFinalizationStatus);
+
+  
 async function restoreSession() {
 const { data, error } = await db.auth.getSession();
 

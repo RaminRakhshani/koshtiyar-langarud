@@ -750,6 +750,29 @@
 
 </style>
 
+<style>
+  
+.draw-match-card {
+  background: #ffffff;
+  border: 1px solid #dce8df;
+  border-radius: 12px;
+  padding: 14px;
+  margin: 10px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.draw-match-card h4 {
+  margin-top: 0;
+  color: #176b43;
+}
+
+.draw-match-card p {
+  margin-bottom: 6px;
+}
+
+</style>
+
+
 <section id="koshtiyar-login">
   <h2>ورود مدیریت کشتی‌یار</h2>
   <p>برای مدیریت مسابقات وارد حساب مجاز خود شوید.</p>
@@ -1012,6 +1035,35 @@
     </div>
 
     <div id="draw-preview-athletes"></div>
+
+    <hr />
+
+    <h3>تولید قرعه‌کشی واقعی</h3>
+    <p>
+      پس از بررسی تعداد کشتی‌گیران و روش قرعه‌کشی، می‌توانی
+      قرعه‌کشی این دسته را ایجاد کنی.
+    </p>
+
+    <button type="button" id="generate-draw-button">
+      تولید قرعه‌کشی دوره‌ای
+    </button>
+
+    <p id="draw-generation-result" role="status" aria-live="polite"></p>
+    
+    <hr />
+
+    <h3>مسابقه‌های قرعه‌کشی‌شده</h3>
+
+    <button type="button" id="refresh-draw-matches-button">
+      به‌روزرسانی فهرست مسابقه‌ها
+    </button>
+
+    <p id="draw-matches-message" role="status" aria-live="polite">
+      برای مشاهده مسابقه‌ها، یک دسته انتخاب کن.
+    </p>
+
+    <div id="draw-matches-list"></div>
+
   </div>
 
 </section>
@@ -2474,6 +2526,7 @@ async function loadCategoriesPanel() {
   }
 
   await loadSelectedEventCategories();
+  await loadGeneratedMatches();
 }
 
 async function loadSelectedEventCategories() {
@@ -2827,6 +2880,213 @@ async function showDrawPreview() {
         "برای به‌روزرسانی تعداد نفرات، روی «نمایش پیش‌نمایش» کلیک کن.";
       document.getElementById("draw-preview-athletes").replaceChildren();
     });
+
+
+document
+  .getElementById("generate-draw-button")
+  .addEventListener("click", async () => {
+    const resultElement = document.getElementById(
+      "draw-generation-result"
+    );
+
+    const button = document.getElementById(
+      "generate-draw-button"
+    );
+
+    const eventId = document.getElementById(
+      "category-event"
+    ).value;
+
+    const categoryId = document.getElementById(
+      "draw-preview-category"
+    ).value;
+
+    if (!isManager()) {
+      resultElement.textContent =
+        "برای تولید قرعه‌کشی باید با حساب مدیر یا برگزارکننده وارد شوی.";
+      return;
+    }
+
+    if (!eventId || !categoryId) {
+      resultElement.textContent =
+        "ابتدا مسابقه و دستهٔ موردنظر را انتخاب کن.";
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "آیا از تولید قرعه‌کشی دوره‌ای برای این دسته مطمئن هستی؟ " +
+      "پس از تولید، ایجاد مجدد قرعه‌کشی برای همین دسته مجاز نیست."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    button.disabled = true;
+    resultElement.textContent =
+      "در حال تولید قرعه‌کشی؛ لطفاً صبر کن...";
+
+    try {
+      const { data, error } = await db.rpc(
+        "generate_round_robin_draw",
+        {
+          p_event_id: eventId,
+          p_category_id: categoryId
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data || !data.success) {
+        throw new Error("پاسخ تولید قرعه‌کشی معتبر نیست.");
+      }
+
+      resultElement.textContent =
+        "قرعه‌کشی با موفقیت ساخته شد. " +
+        "تعداد کشتی‌گیران: " + data.athlete_count +
+        " | تعداد دورها: " + data.round_count +
+        " | تعداد مسابقه‌ها: " + data.match_count;
+
+      await loadSelectedEventCategories();
+
+    } catch (error) {
+      console.error("خطا در تولید قرعه‌کشی:", error);
+
+      const message = error?.message || "";
+
+      if (message.includes("قبلاً قرعه‌کشی ساخته شده است")) {
+        resultElement.textContent =
+          "برای این دسته قبلاً قرعه‌کشی ساخته شده است؛ " +
+          "قرعه‌کشی جدید ایجاد نشد.";
+      } else if (message.includes("حداقل دو کشتی‌گیر")) {
+        resultElement.textContent =
+          "برای تولید قرعه‌کشی، حداقل دو کشتی‌گیر ثبت‌نام‌شده یا تأییدشده لازم است.";
+      } else if (
+        message.includes("به حد نصاب") ||
+        message.includes("حد نصاب")
+      ) {
+        resultElement.textContent =
+          "تعداد کشتی‌گیران به حد نصاب قرعه‌کشی دوره‌ای رسیده است؛ " +
+          "برای این دسته باید روش دیگری انتخاب شود.";
+      } else if (
+        message.includes("اجازه تولید قرعه کشی ندارید")
+      ) {
+        resultElement.textContent =
+          "حساب کاربری اجازهٔ تولید قرعه‌کشی ندارد.";
+      } else {
+        resultElement.textContent =
+          "تولید قرعه‌کشی انجام نشد. جزئیات خطا در Console مرورگر قابل مشاهده است.";
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  
+async function loadGeneratedMatches() {
+  const message = document.getElementById("draw-matches-message");
+  const list = document.getElementById("draw-matches-list");
+
+  const eventId = document.getElementById("category-event").value;
+  const categoryId = document.getElementById("draw-preview-category").value;
+
+  list.replaceChildren();
+
+  if (!eventId || !categoryId) {
+    message.textContent = "ابتدا مسابقه و دسته را انتخاب کن.";
+    return;
+  }
+
+  message.textContent = "در حال دریافت مسابقه‌ها...";
+
+  try {
+    const { data, error } = await db
+      .from("matches")
+      .select(`
+        id,
+        bout_number,
+        round_number,
+        round_name,
+        athlete_red_id,
+        athlete_blue_id,
+        red_score,
+        blue_score,
+        winner_id,
+        status
+      `)
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .not("draw_id", "is", null)
+      .order("bout_number", { ascending: true });
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      message.textContent = "هنوز مسابقه‌ای برای این دسته تولید نشده است.";
+      return;
+    }
+
+    const athleteNames = new Map(
+      allAthletes.map(athlete => [
+        athlete.id,
+        athlete.full_name
+      ])
+    );
+
+    const fragment = document.createDocumentFragment();
+
+    for (const match of data) {
+      const card = document.createElement("article");
+      card.className = "draw-match-card";
+
+      const heading = document.createElement("h4");
+      heading.textContent =
+        `مسابقه ${match.bout_number} ـ ${match.round_name || `دور ${match.round_number}`}`;
+
+      const competitors = document.createElement("p");
+      const redName =
+        athleteNames.get(match.athlete_red_id) || "کشتی‌گیر قرمز";
+      const blueName =
+        athleteNames.get(match.athlete_blue_id) || "کشتی‌گیر آبی";
+
+      competitors.textContent = `${redName}  ـ  ${blueName}`;
+
+      const score = document.createElement("p");
+      score.textContent =
+        `امتیاز: ${match.red_score} - ${match.blue_score}`;
+
+      const status = document.createElement("p");
+      status.textContent =
+        match.status === "scheduled" ? "وضعیت: در انتظار برگزاری" :
+        match.status === "completed" ? "وضعیت: پایان‌یافته" :
+        `وضعیت: ${match.status}`;
+
+      card.append(heading, competitors, score, status);
+      fragment.append(card);
+    }
+
+    list.append(fragment);
+
+    message.textContent =
+      `تعداد مسابقه‌های تولیدشده: ${data.length}`;
+
+  } catch (error) {
+    console.error("خطا در دریافت مسابقه‌ها:", error);
+    message.textContent =
+      "دریافت مسابقه‌ها ناموفق بود. Console مرورگر را بررسی کن.";
+  }
+}
+
+
+  document
+    .getElementById("refresh-draw-matches-button")
+    .addEventListener("click", loadGeneratedMatches);
+
+  document
+    .getElementById("draw-preview-category")
+    .addEventListener("change", loadGeneratedMatches);
 
 
 async function restoreSession() {

@@ -34,6 +34,195 @@
 
   testKoshtiyarDatabase();
 </script>
+
+<style>
+  #events-admin {
+    direction: rtl;
+    font-family: sans-serif;
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    color: #172033;
+  }
+  #events-admin input,
+  #events-admin select,
+  #events-admin button {
+    box-sizing: border-box;
+    padding: 11px;
+    margin: 5px 0;
+    border-radius: 8px;
+    font: inherit;
+  }
+  #events-admin input,
+  #events-admin select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+  }
+  #events-admin button {
+    border: 0;
+    background: #14532d;
+    color: white;
+    cursor: pointer;
+  }
+  #events-admin .event-card {
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 10px 0;
+  }
+  #events-admin .event-card button {
+    margin-left: 5px;
+  }
+  #events-admin .admin-form {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 25px;
+  }
+</style>
+
+<section id="events-admin">
+  <h2>مدیریت مسابقات کشتی‌یار</h2>
+  <p id="events-message">در حال دریافت مسابقات...</p>
+
+  <h3>ثبت مسابقه جدید</h3>
+  <form id="event-form" class="admin-form">
+    <input id="event-name" placeholder="نام مسابقه" required />
+    <input id="event-location" placeholder="محل برگزاری" required />
+    <label for="event-start">تاریخ شروع</label>
+    <input id="event-start" type="date" required />
+    <label for="event-end">تاریخ پایان</label>
+    <input id="event-end" type="date" required />
+    <label for="event-status">وضعیت</label>
+    <select id="event-status">
+      <option value="draft">پیش‌نویس</option>
+      <option value="published">منتشرشده</option>
+      <option value="completed">پایان‌یافته</option>
+    </select>
+    <button type="submit">ثبت مسابقه</button>
+  </form>
+
+  <h3>فهرست مسابقات</h3>
+  <div id="events-list"></div>
+</section>
+
+<script>
+  // از اتصال db که قبلاً در فایل ساخته‌ای استفاده می‌کنیم.
+  const eventForm = document.getElementById("event-form");
+  const eventsMessage = document.getElementById("events-message");
+  const eventsList = document.getElementById("events-list");
+
+  const statusNames = {
+    draft: "پیش‌نویس",
+    published: "منتشرشده",
+    completed: "پایان‌یافته"
+  };
+
+  async function loadEvents() {
+    eventsMessage.textContent = "در حال دریافت مسابقات...";
+    eventsList.replaceChildren();
+
+    const { data, error } = await db
+      .from("events")
+      .select("id, name, location, start_date, end_date, status")
+      .order("start_date", { ascending: true });
+
+    if (error) {
+      eventsMessage.textContent = "خطا در دریافت مسابقات: " + error.message;
+      return;
+    }
+
+    eventsMessage.textContent = `تعداد مسابقات: ${data.length}`;
+
+    if (!data.length) {
+      eventsList.textContent = "هنوز مسابقه‌ای ثبت نشده است.";
+      return;
+    }
+
+    for (const event of data) {
+      const card = document.createElement("article");
+      card.className = "event-card";
+
+      const title = document.createElement("h4");
+      title.textContent = event.name;
+
+      const details = document.createElement("p");
+      details.textContent =
+        `محل: ${event.location || "مشخص نشده"} | ` +
+        `شروع: ${event.start_date || "—"} | ` +
+        `پایان: ${event.end_date || "—"} | ` +
+        `وضعیت: ${statusNames[event.status] || event.status}`;
+
+      const status = document.createElement("select");
+      for (const [value, label] of Object.entries(statusNames)) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        option.selected = event.status === value;
+        status.appendChild(option);
+      }
+
+      const updateButton = document.createElement("button");
+      updateButton.textContent = "ذخیره وضعیت";
+      updateButton.addEventListener("click", async () => {
+        updateButton.disabled = true;
+
+        const { error } = await db
+          .from("events")
+          .update({ status: status.value })
+          .eq("id", event.id);
+
+        updateButton.disabled = false;
+
+        if (error) {
+          alert("تغییر وضعیت انجام نشد: " + error.message);
+          return;
+        }
+
+        alert("وضعیت به‌روزرسانی شد.");
+        loadEvents();
+      });
+
+      card.append(title, details, status, updateButton);
+      eventsList.appendChild(card);
+    }
+  }
+
+  eventForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById("event-name").value.trim();
+    const location = document.getElementById("event-location").value.trim();
+    const start_date = document.getElementById("event-start").value;
+    const end_date = document.getElementById("event-end").value;
+    const status = document.getElementById("event-status").value;
+
+    if (end_date < start_date) {
+      alert("تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
+      return;
+    }
+
+    const submitButton = eventForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+
+    const { error } = await db.from("events").insert([{
+      name, location, start_date, end_date, status
+    }]);
+
+    submitButton.disabled = false;
+
+    if (error) {
+      alert("ثبت مسابقه انجام نشد: " + error.message);
+      return;
+    }
+
+    alert("مسابقه با موفقیت ثبت شد.");
+    eventForm.reset();
+    loadEvents();
+  });
+
+  loadEvents();
+</script>
+
 <body>
 <header><div class="brand"><b class="mark">ک</b><div><strong>کشتی‌یار</strong><small>سامانه مدیریت مسابقات کشتی</small></div></div><span class="status">● نسخه آزمایشی</span></header>
 <main>

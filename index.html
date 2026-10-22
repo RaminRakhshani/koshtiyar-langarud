@@ -175,8 +175,27 @@
     <button type="submit">ثبت مسابقه</button>
   </form>
 
-  <h3>فهرست مسابقات</h3>
-  <div id="events-list"></div>
+  
+<h3>فهرست مسابقات</h3>
+
+<label for="search-events">جست‌وجوی مسابقه</label>
+<input
+  id="search-events"
+  type="search"
+  placeholder="نام مسابقه یا محل برگزاری..."
+/>
+
+<label for="filter-status">فیلتر بر اساس وضعیت</label>
+<select id="filter-status">
+  <option value="all">همه مسابقات</option>
+  <option value="draft">پیش‌نویس</option>
+  <option value="published">منتشرشده</option>
+  <option value="completed">پایان‌یافته</option>
+</select>
+
+<p id="events-count"></p>
+<div id="events-list"></div>
+
 </section>
 
 <script>
@@ -291,124 +310,301 @@
     }
   );
 
-  async function loadEvents() {
-    if (!managerUser || !managerRole) return;
+  
+let allEvents = [];
 
-    eventsMessage.textContent = "در حال دریافت مسابقات...";
-    eventsList.replaceChildren();
+function renderEvents() {
+  if (!managerUser || !managerRole) return;
 
-    const { data, error } = await db
-      .from("events")
-      .select("id, name, location, start_date, end_date, status")
-      .order("start_date", { ascending: true });
+  const searchInput = document.getElementById("search-events");
+  const filterInput = document.getElementById("filter-status");
+  const countElement = document.getElementById("events-count");
 
-    if (error) {
-      eventsMessage.textContent = "خطا در دریافت مسابقات.";
-      console.error("Load events error:", error.message);
-      return;
-    }
+  const query = (searchInput?.value || "").trim().toLocaleLowerCase();
+  const selectedStatus = filterInput?.value || "all";
 
-    eventsMessage.textContent = `تعداد مسابقات: ${data.length}`;
+  const filteredEvents = allEvents.filter((event) => {
+    const searchableText =
+      `${event.name || ""} ${event.location || ""}`.toLocaleLowerCase();
 
-    if (!data.length) {
-      eventsList.textContent = "هنوز مسابقه‌ای ثبت نشده است.";
-      return;
-    }
+    const matchesSearch = searchableText.includes(query);
+    const matchesStatus =
+      selectedStatus === "all" || event.status === selectedStatus;
 
-    for (const event of data) {
-      const card = document.createElement("article");
-      card.className = "event-card";
+    return matchesSearch && matchesStatus;
+  });
 
-      const title = document.createElement("h4");
-      title.textContent = event.name;
+  eventsList.replaceChildren();
+  countElement.textContent =
+    `نمایش ${filteredEvents.length} از ${allEvents.length} مسابقه`;
 
-      const details = document.createElement("p");
-      details.textContent =
-        `محل: ${event.location || "—"} | ` +
-        `شروع: ${event.start_date || "—"} | ` +
-        `پایان: ${event.end_date || "—"} | ` +
-        `وضعیت: ${statusNames[event.status] || event.status}`;
+  if (filteredEvents.length === 0) {
+    eventsList.textContent = "مسابقه‌ای با این جست‌وجو یا فیلتر پیدا نشد.";
+    return;
+  }
 
-      const status = document.createElement("select");
+  for (const event of filteredEvents) {
+    const card = document.createElement("article");
+    card.className = "event-card";
+
+    const title = document.createElement("h4");
+    title.textContent = event.name;
+
+    const details = document.createElement("p");
+    details.textContent =
+      `محل: ${event.location || "—"} | ` +
+      `شروع: ${event.start_date || "—"} | ` +
+      `پایان: ${event.end_date || "—"} | ` +
+      `وضعیت: ${statusNames[event.status] || event.status}`;
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.textContent = "ویرایش مشخصات";
+
+    editButton.addEventListener("click", () => {
+      if (!managerUser || !managerRole) return;
+
+      card.replaceChildren();
+
+      const heading = document.createElement("h4");
+      heading.textContent = "ویرایش مسابقه";
+
+      const form = document.createElement("form");
+      form.className = "admin-form";
+
+      function addField(labelText, value, type = "text", required = true) {
+        const label = document.createElement("label");
+        const input = document.createElement("input");
+
+        input.type = type;
+        input.value = value || "";
+        input.required = required;
+        label.textContent = labelText;
+
+        form.append(label, input);
+        return input;
+      }
+
+      const nameInput = addField("نام مسابقه", event.name);
+      const locationInput = addField("محل برگزاری", event.location);
+      const startInput = addField("تاریخ شروع", event.start_date, "date");
+      const endInput = addField("تاریخ پایان", event.end_date, "date");
+
+      const statusLabel = document.createElement("label");
+      statusLabel.textContent = "وضعیت";
+
+      const statusInput = document.createElement("select");
+
       for (const [value, label] of Object.entries(statusNames)) {
         const option = document.createElement("option");
         option.value = value;
         option.textContent = label;
         option.selected = event.status === value;
-        status.appendChild(option);
+        statusInput.appendChild(option);
       }
 
-      const updateButton = document.createElement("button");
-      updateButton.textContent = "ذخیره وضعیت";
-      updateButton.addEventListener("click", async () => {
-        if (!managerUser || !managerRole) return;
-        updateButton.disabled = true;
+      form.append(statusLabel, statusInput);
+
+      const saveButton = document.createElement("button");
+      saveButton.type = "submit";
+      saveButton.textContent = "ذخیره تغییرات";
+
+      const cancelButton = document.createElement("button");
+      cancelButton.type = "button";
+      cancelButton.textContent = "انصراف";
+      cancelButton.addEventListener("click", renderEvents);
+
+      form.append(saveButton, cancelButton);
+      card.append(heading, form);
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (!managerUser || !managerRole) {
+          showSignedOut("ابتدا وارد حساب مجاز شو.");
+          return;
+        }
+
+        const name = nameInput.value.trim();
+        const location = locationInput.value.trim();
+        const start_date = startInput.value;
+        const end_date = endInput.value;
+        const status = statusInput.value;
+
+        if (!name || !location || !start_date || !end_date) {
+          alert("تمام فیلدها را پر کن.");
+          return;
+        }
+
+        if (end_date < start_date) {
+          alert("تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
+          return;
+        }
+
+        saveButton.disabled = true;
 
         try {
-          const { error } = await db
+          const { data, error } = await db
             .from("events")
-            .update({ status: status.value })
-            .eq("id", event.id);
+            .update({ name, location, start_date, end_date, status })
+            .eq("id", event.id)
+            .select("id");
 
           if (error) {
-            alert("تغییر وضعیت مجاز نبود یا خطا رخ داد.");
-            console.error("Update error:", error.message);
+            console.error("Event update error:", error.message);
+            alert("ذخیره انجام نشد. مجوزهای RLS را بررسی کن.");
+            return;
+          }
+
+          if (!data || data.length === 0) {
+            alert(
+              "هیچ رکوردی تغییر نکرد. ممکن است مجوز ویرایش نداشته باشی."
+            );
             return;
           }
 
           await loadEvents();
         } finally {
-          updateButton.disabled = false;
+          saveButton.disabled = false;
         }
       });
+    });
 
-      card.append(title, details, status, updateButton);
-      eventsList.appendChild(card);
-    }
-  }
+    const statusButton = document.createElement("button");
+    statusButton.type = "button";
+    statusButton.textContent = "تغییر سریع وضعیت";
 
-  eventForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!managerUser || !managerRole) {
-      showSignedOut("ابتدا وارد حساب مجاز شو.");
-      return;
-    }
+    statusButton.addEventListener("click", async () => {
+      if (!managerUser || !managerRole) return;
 
-    const name = document.getElementById("event-name").value.trim();
-    const location = document.getElementById("event-location").value.trim();
-    const start_date = document.getElementById("event-start").value;
-    const end_date = document.getElementById("event-end").value;
-    const status = document.getElementById("event-status").value;
+      const select = document.createElement("select");
 
-    if (end_date < start_date) {
-      alert("تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
-      return;
-    }
-
-    const submitButton = eventForm.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-
-    try {
-      const { error } = await db.from("events").insert([{
-        name, location, start_date, end_date, status
-      }]);
-
-      if (error) {
-        eventsMessage.textContent =
-          "ثبت انجام نشد؛ مجوزهای RLS و نقش حساب را بررسی کن.";
-        console.error("Insert error:", error.message);
-        return;
+      for (const [value, label] of Object.entries(statusNames)) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        option.selected = event.status === value;
+        select.appendChild(option);
       }
 
-      eventsMessage.textContent = "مسابقه با موفقیت ثبت شد.";
-      eventForm.reset();
-      await loadEvents();
-    } finally {
-      submitButton.disabled = false;
-    }
-  });
+      const saveStatus = document.createElement("button");
+      saveStatus.type = "button";
+      saveStatus.textContent = "ذخیره وضعیت";
 
-  async function restoreSession() {
+      const cancelStatus = document.createElement("button");
+      cancelStatus.type = "button";
+      cancelStatus.textContent = "انصراف";
+      cancelStatus.addEventListener("click", renderEvents);
+
+      card.append(select, saveStatus, cancelStatus);
+
+      saveStatus.addEventListener("click", async () => {
+        saveStatus.disabled = true;
+
+        try {
+          const { data, error } = await db
+            .from("events")
+            .update({ status: select.value })
+            .eq("id", event.id)
+            .select("id");
+
+          if (error) {
+            console.error("Status update error:", error.message);
+            alert("تغییر وضعیت انجام نشد.");
+            return;
+          }
+
+          if (!data || data.length === 0) {
+            alert("تغییری انجام نشد؛ مجوز ویرایش را بررسی کن.");
+            return;
+          }
+
+          await loadEvents();
+        } finally {
+          saveStatus.disabled = false;
+        }
+      });
+    });
+
+    card.append(title, details, editButton, statusButton);
+    eventsList.appendChild(card);
+  }
+}
+
+async function loadEvents() {
+  if (!managerUser || !managerRole) return;
+
+  eventsMessage.textContent = "در حال دریافت مسابقات...";
+
+  const { data, error } = await db
+    .from("events")
+    .select("id, name, location, start_date, end_date, status")
+    .order("start_date", { ascending: true });
+
+  if (error) {
+    eventsMessage.textContent = "خطا در دریافت مسابقات.";
+    console.error("Load events error:", error.message);
+    return;
+  }
+
+  allEvents = data || [];
+  eventsMessage.textContent = "اطلاعات مسابقات به‌روز است.";
+  renderEvents();
+}
+
+document.getElementById("search-events").addEventListener(
+  "input",
+  renderEvents
+);
+
+document.getElementById("filter-status").addEventListener(
+  "change",
+  renderEvents
+);
+
+
+eventForm.addEventListener("submit", async (e) => {
+e.preventDefault();
+if (!managerUser || !managerRole) {
+    showSignedOut("ابتدا وارد حساب مجاز شو.");
+    return;
+}
+
+const name = document.getElementById("event-name").value.trim();
+const location = document.getElementById("event-location").value.trim();
+const start_date = document.getElementById("event-start").value;
+const end_date = document.getElementById("event-end").value;
+const status = document.getElementById("event-status").value;
+
+if (end_date < start_date) {
+    alert("تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
+    return;
+}
+
+const submitButton = eventForm.querySelector('button[type="submit"]');
+submitButton.disabled = true;
+
+try {
+    const { error } = await db.from("events").insert([{
+    name, location, start_date, end_date, status
+    }]);
+
+    if (error) {
+    eventsMessage.textContent =
+        "ثبت انجام نشد؛ مجوزهای RLS و نقش حساب را بررسی کن.";
+    console.error("Insert error:", error.message);
+    return;
+    }
+
+    eventsMessage.textContent = "مسابقه با موفقیت ثبت شد.";
+    eventForm.reset();
+    await loadEvents();
+} finally {
+    submitButton.disabled = false;
+}
+});
+
+async function restoreSession() {
     const { data, error } = await db.auth.getSession();
 
     if (error) {

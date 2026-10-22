@@ -499,6 +499,181 @@
 
 </style>
 
+<style>
+  
+/* ===== مدیریت دسته‌های مسابقه کشتی‌یار ===== */
+
+#categories-admin {
+  direction: rtl;
+  text-align: right;
+  max-width: 1100px;
+  margin: 28px auto;
+  padding: 24px;
+  background: #ffffff;
+  color: #18352b;
+  border: 1px solid #dce9e1;
+  border-radius: 20px;
+  box-shadow: 0 8px 28px rgba(25, 75, 52, 0.07);
+  font-family: inherit;
+}
+
+#categories-admin[hidden] {
+  display: none !important;
+}
+
+#categories-admin h2 {
+  margin: 0 0 10px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #176b4d;
+}
+
+#categories-admin h3 {
+  margin: 26px 0 14px;
+  font-size: 1.15rem;
+  font-weight: 750;
+  color: #245b45;
+}
+
+#categories-admin h4 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #176b4d;
+}
+
+#categories-admin p {
+  line-height: 1.9;
+}
+
+#categories-admin form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  padding: 18px;
+  margin: 16px 0;
+  background: #f6faf7;
+  border: 1px solid #e1eee5;
+  border-radius: 14px;
+}
+
+#categories-admin label {
+  display: block;
+  align-self: end;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #345c49;
+}
+
+#categories-admin input,
+#categories-admin select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #cadbd0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #18352b;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#categories-admin input:focus,
+#categories-admin select:focus {
+  border-color: #21865d;
+  box-shadow: 0 0 0 3px rgba(33, 134, 93, 0.13);
+}
+
+#categories-admin button {
+  grid-column: 1 / -1;
+  min-height: 46px;
+  padding: 11px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #18794e;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+#categories-admin button:hover {
+  background: #11633f;
+}
+
+#categories-admin button:active {
+  transform: scale(0.99);
+}
+
+#categories-admin button:focus-visible {
+  outline: 3px solid #9ad7b7;
+  outline-offset: 3px;
+}
+
+#categories-admin hr {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid #e1eee5;
+}
+
+#categories-message {
+  min-height: 24px;
+  margin: 8px 0 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+#categories-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+#categories-list .team-card {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 18px;
+  background: #f8fbf9;
+  border: 1px solid #dcebe1;
+  border-right: 4px solid #21865d;
+  border-radius: 13px;
+  box-shadow: 0 3px 12px rgba(25, 75, 52, 0.04);
+}
+
+#categories-list .team-card p {
+  margin: 0;
+  color: #476657;
+  font-size: 0.93rem;
+}
+
+@media (max-width: 640px) {
+  #categories-admin {
+    margin: 16px 10px;
+    padding: 16px;
+    border-radius: 15px;
+  }
+
+  #categories-admin h2 {
+    font-size: 1.25rem;
+  }
+
+  #categories-admin form {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  #categories-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+</style>
+
 <section id="koshtiyar-login">
   <h2>ورود مدیریت کشتی‌یار</h2>
   <p>برای مدیریت مسابقات وارد حساب مجاز خود شوید.</p>
@@ -628,7 +803,6 @@
 </section>
 
 
-
 <section id="registrations-admin" hidden dir="rtl">
   <h2>ثبت‌نام کشتی‌گیران در مسابقات</h2>
   <p id="registrations-message" role="status"></p>
@@ -680,6 +854,66 @@
 </section>
 
 
+
+<section id="categories-admin" hidden dir="rtl">
+  <h2>مدیریت دسته‌های مسابقه</h2>
+  <p id="categories-message" role="status"></p>
+
+  <form id="category-settings-form">
+    <label for="category-event">مسابقه</label>
+    <select id="category-event" required>
+      <option value="">انتخاب مسابقه</option>
+    </select>
+
+    <label for="category-threshold">حد نصاب قرعه‌کشی دوره‌ای</label>
+    <input
+      id="category-threshold"
+      type="number"
+      min="2"
+      step="1"
+      value="6"
+      required
+    />
+
+    <button type="submit">ذخیره حد نصاب</button>
+  </form>
+
+  <hr />
+
+  <h3>ایجاد دسته جدید</h3>
+  <form id="category-create-form">
+    <label for="category-style">سبک کشتی</label>
+    <select id="category-style" required>
+      <option value="freestyle">آزاد</option>
+      <option value="greco">فرنگی</option>
+    </select>
+
+    <label for="category-age">رده سنی</label>
+    <input
+      id="category-age"
+      type="text"
+      maxlength="80"
+      placeholder="مثلاً نوجوانان"
+      required
+    />
+
+    <label for="category-weight">وزن</label>
+    <input
+      id="category-weight"
+      type="text"
+      maxlength="40"
+      placeholder="مثلاً ۵۷ کیلوگرم"
+      required
+    />
+
+    <button type="submit">ایجاد دسته</button>
+  </form>
+
+  <h3>دسته‌های مسابقه انتخاب‌شده</h3>
+  <div id="categories-list"></div>
+</section>
+
+
 <script>
   // متغیر db باید قبلاً با Project URL و Publishable Key
   // ساخته شده باشد. آن را دوباره تعریف نکن.
@@ -712,6 +946,11 @@
     eventsList.replaceChildren();
     eventsMessage.textContent = "";
     loginMessage.textContent = message;
+
+    // مخفی کردن بخش‌های مدیریتی هنگام خروج
+    document.getElementById("categories-admin").hidden = true;
+    document.getElementById("teams-admin").hidden = true;
+    document.getElementById("registrations-admin").hidden = true;
   }
 
   async function checkManager(user) {
@@ -757,6 +996,9 @@
     document.getElementById("registrations-admin").hidden = false;
 
     await loadRegistrationPanel();
+    
+    document.getElementById("categories-admin").hidden = false;
+    await loadCategoriesPanel();
 
     return true;
   }
@@ -1976,6 +2218,277 @@ document.getElementById("registration-list-team-filter")
 
 document.getElementById("registration-status-filter")
   .addEventListener("change", renderRegistrationList);
+
+
+let managedCategories = [];
+let categoryRegistrations = [];
+
+function setCategoriesMessage(message, isError = false) {
+  const el = document.getElementById("categories-message");
+  if (!el) return;
+
+  el.textContent = message;
+  el.style.color = isError ? "#b42318" : "";
+}
+
+async function loadCategoriesPanel() {
+  if (!isManager()) return;
+
+  const eventSelect = document.getElementById("category-event");
+  const previousEventId = eventSelect.value;
+
+  const { data: events, error: eventsError } = await db
+    .from("events")
+    .select("id, name, round_robin_threshold")
+    .order("created_at", { ascending: false });
+
+  if (eventsError) {
+    setCategoriesMessage(
+      "دریافت مسابقات ناموفق بود: " + eventsError.message,
+      true
+    );
+    return;
+  }
+
+  eventSelect.replaceChildren(new Option("انتخاب مسابقه", ""));
+
+  (events || []).forEach((event) => {
+    const option = new Option(event.name, event.id);
+    eventSelect.add(option);
+  });
+
+  const selectedStillExists = (events || []).some(
+    (event) => event.id === previousEventId
+  );
+
+  if (selectedStillExists) {
+    eventSelect.value = previousEventId;
+  } else if (events && events.length) {
+    eventSelect.value = events[0].id;
+  }
+
+  await loadSelectedEventCategories();
+}
+
+async function loadSelectedEventCategories() {
+  if (!isManager()) return;
+
+  const eventId = document.getElementById("category-event").value;
+  const thresholdInput = document.getElementById("category-threshold");
+  const list = document.getElementById("categories-list");
+
+  managedCategories = [];
+  categoryRegistrations = [];
+  list.replaceChildren();
+
+  if (!eventId) {
+    setCategoriesMessage("ابتدا یک مسابقه انتخاب کن.");
+    return;
+  }
+
+  const { data: event, error: eventError } = await db
+    .from("events")
+    .select("id, name, round_robin_threshold")
+    .eq("id", eventId)
+    .single();
+
+  if (eventError) {
+    setCategoriesMessage(
+      "دریافت تنظیمات مسابقه ناموفق بود: " + eventError.message,
+      true
+    );
+    return;
+  }
+
+  thresholdInput.value = event.round_robin_threshold ?? 6;
+
+  const { data: categories, error: categoriesError } = await db
+    .from("event_categories")
+    .select("id, event_id, style, age_category, weight_class, created_at")
+    .eq("event_id", eventId)
+    .order("style")
+    .order("age_category")
+    .order("weight_class");
+
+  if (categoriesError) {
+    setCategoriesMessage(
+      "دریافت دسته‌ها ناموفق بود: " + categoriesError.message,
+      true
+    );
+    return;
+  }
+
+  const { data: registrations, error: registrationsError } = await db
+    .from("event_registrations")
+    .select("id, category_id, status")
+    .eq("event_id", eventId);
+
+  if (registrationsError) {
+    setCategoriesMessage(
+      "دریافت ثبت‌نام‌ها ناموفق بود: " + registrationsError.message,
+      true
+    );
+    return;
+  }
+
+  managedCategories = categories || [];
+  categoryRegistrations = registrations || [];
+
+  renderManagedCategories();
+  setCategoriesMessage("دسته‌های مسابقه بارگذاری شدند.");
+}
+
+function renderManagedCategories() {
+  const list = document.getElementById("categories-list");
+  list.replaceChildren();
+
+  if (!managedCategories.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "هنوز دسته‌ای برای این مسابقه ساخته نشده است.";
+    list.appendChild(empty);
+    return;
+  }
+
+  const threshold = Number(
+    document.getElementById("category-threshold").value
+  );
+
+  managedCategories.forEach((category) => {
+    const entries = categoryRegistrations.filter(
+      (registration) =>
+        registration.category_id === category.id &&
+        ["registered", "confirmed"].includes(registration.status)
+    );
+
+    const count = entries.length;
+    let method = "هنوز قرعه‌کشی نمی‌شود";
+
+    if (count >= 2) {
+      method = count < threshold
+        ? "دوره‌ای"
+        : "حذفی دوگانه";
+    }
+
+    const card = document.createElement("article");
+    card.className = "team-card";
+
+    const heading = document.createElement("h4");
+    heading.textContent =
+      (category.style === "freestyle" ? "آزاد" : "فرنگی") +
+      " — " + category.age_category +
+      " — " + category.weight_class;
+
+    const details = document.createElement("p");
+    details.textContent =
+      "ثبت‌نام معتبر: " + count +
+      " | روش پیشنهادی: " + method;
+
+    card.append(heading, details);
+    list.appendChild(card);
+  });
+}
+
+document
+  .getElementById("category-event")
+  .addEventListener("change", loadSelectedEventCategories);
+
+document
+  .getElementById("category-threshold")
+  .addEventListener("input", renderManagedCategories);
+
+document
+  .getElementById("category-settings-form")
+  .addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!isManager()) {
+      setCategoriesMessage("دسترسی مجاز نیست.", true);
+      return;
+    }
+
+    const eventId = document.getElementById("category-event").value;
+    const threshold = Number(
+      document.getElementById("category-threshold").value
+    );
+
+    if (!eventId || !Number.isInteger(threshold) || threshold < 2) {
+      setCategoriesMessage("مسابقه و حد نصاب معتبر را وارد کن.", true);
+      return;
+    }
+
+    const { error } = await db
+      .from("events")
+      .update({ round_robin_threshold: threshold })
+      .eq("id", eventId);
+
+    if (error) {
+      setCategoriesMessage(
+        "ذخیره حد نصاب ناموفق بود: " + error.message,
+        true
+      );
+      return;
+    }
+
+    setCategoriesMessage("حد نصاب قرعه‌کشی ذخیره شد.");
+    await loadSelectedEventCategories();
+  });
+
+document
+  .getElementById("category-create-form")
+  .addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!isManager()) {
+      setCategoriesMessage("دسترسی مجاز نیست.", true);
+      return;
+    }
+
+    const eventId = document.getElementById("category-event").value;
+    const style = document.getElementById("category-style").value;
+    const ageCategory = document.getElementById("category-age").value.trim();
+    const weightClass = document.getElementById("category-weight").value.trim();
+
+    if (!eventId || !ageCategory || !weightClass) {
+      setCategoriesMessage(
+        "ابتدا مسابقه، رده سنی و وزن را مشخص کن.",
+        true
+      );
+      return;
+    }
+
+    const { error } = await db
+      .from("event_categories")
+      .insert({
+        event_id: eventId,
+        style,
+        age_category: ageCategory,
+        weight_class: weightClass
+      });
+
+    if (error) {
+      console.error("خطای ایجاد دسته:", error);
+
+      if (error.code === "23505" ||
+        /duplicate key|unique constraint/i.test(error.message || "")) {
+        setCategoriesMessage(
+          "این دسته قبلاً برای همین مسابقه ساخته شده است.",
+          true
+        );
+      } else {
+        setCategoriesMessage(
+          "ایجاد دسته ناموفق بود: " + error.message,
+          true
+        );
+      }
+      return;
+    }
+
+    document.getElementById("category-age").value = "";
+    document.getElementById("category-weight").value = "";
+
+    setCategoriesMessage("دسته با موفقیت ایجاد شد.");
+    await loadSelectedEventCategories();
+  });
 
 
 async function restoreSession() {

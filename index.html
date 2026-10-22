@@ -318,6 +318,187 @@
 
 </style>
 
+<style>
+    
+/* Koshtiyar — Event Registrations */
+#registrations-admin {
+  --reg-primary: #166534;
+  --reg-primary-hover: #14532d;
+  --reg-bg: #f4f7f5;
+  --reg-surface: #ffffff;
+  --reg-text: #172b24;
+  --reg-muted: #64756c;
+  --reg-border: #dce7df;
+
+  direction: rtl;
+  box-sizing: border-box;
+  width: min(100% - 32px, 1100px);
+  margin: 32px auto;
+  padding: 28px;
+  color: var(--reg-text);
+  background: var(--reg-bg);
+  border: 1px solid var(--reg-border);
+  border-radius: 20px;
+  font-family: Tahoma, Arial, sans-serif;
+  line-height: 1.8;
+}
+
+#registrations-admin *,
+#registrations-admin *::before,
+#registrations-admin *::after {
+  box-sizing: border-box;
+}
+
+#registrations-admin h2 {
+  margin: 0 0 12px;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+#registrations-admin h3 {
+  margin: 28px 0 14px;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+#registrations-admin label {
+  display: block;
+  margin: 12px 0 5px;
+  color: var(--reg-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#registrations-admin input,
+#registrations-admin select {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
+  border: 1px solid var(--reg-border);
+  border-radius: 10px;
+  background: var(--reg-surface);
+  color: var(--reg-text);
+  font: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+#registrations-admin input:focus,
+#registrations-admin select:focus {
+  border-color: var(--reg-primary);
+  box-shadow: 0 0 0 3px #1665341c;
+}
+
+#registrations-admin button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  margin: 8px 0;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--reg-primary);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+
+#registrations-admin button:hover {
+  background: var(--reg-primary-hover);
+}
+
+#registrations-admin button:active {
+  transform: scale(.98);
+}
+
+#registrations-admin button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+#registrations-admin #registration-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+  padding: 20px;
+  border: 1px solid var(--reg-border);
+  border-radius: 14px;
+  background: var(--reg-surface);
+  box-shadow: 0 4px 18px #172b2408;
+}
+
+#registrations-admin #registration-form button {
+  align-self: end;
+  margin-top: 12px;
+}
+
+#registrations-admin #registration-search {
+  margin-bottom: 12px;
+}
+
+#registrations-admin #registrations-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+#registrations-admin #registrations-list article {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--reg-border);
+  border-radius: 14px;
+  background: var(--reg-surface);
+  box-shadow: 0 4px 16px #172b2408;
+  overflow-wrap: anywhere;
+}
+
+#registrations-admin #registrations-list strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+#registrations-admin #registrations-list p {
+  margin: 6px 0 10px;
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+#registrations-admin [role="status"] {
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  #registrations-admin {
+    width: calc(100% - 20px);
+    margin: 14px auto;
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  #registrations-admin h2 {
+    font-size: 20px;
+  }
+
+  #registrations-admin #registration-form,
+  #registrations-admin #registrations-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #registrations-admin #registration-form {
+    padding: 14px;
+  }
+}
+
+</style>
+
 <section id="koshtiyar-login">
   <h2>ورود مدیریت کشتی‌یار</h2>
   <p>برای مدیریت مسابقات وارد حساب مجاز خود شوید.</p>
@@ -334,6 +515,7 @@
   </form>
   <p id="login-message" role="status"></p>
 </section>
+
 
 <section id="events-admin" hidden>
   <h2>مدیریت مسابقات کشتی‌یار</h2>
@@ -387,7 +569,6 @@
 <div id="events-list"></div>
 
 </section>
-
 
 
 <section id="teams-admin" hidden dir="rtl"
@@ -446,6 +627,57 @@
   <div id="athletes-list"></div>
 </section>
 
+
+
+<section id="registrations-admin" hidden dir="rtl">
+  <h2>ثبت‌نام کشتی‌گیران در مسابقات</h2>
+  <p id="registrations-message" role="status"></p>
+
+  <form id="registration-form">
+    <label for="registration-event">مسابقه</label>
+    <select id="registration-event" required>
+      <option value="">انتخاب مسابقه</option>
+    </select>
+
+    <label for="registration-team">فیلتر تیم</label>
+    <select id="registration-team">
+      <option value="">همه تیم‌ها</option>
+    </select>
+
+    <label for="registration-athlete">کشتی‌گیر</label>
+    <select id="registration-athlete" required>
+      <option value="">ابتدا مسابقه و کشتی‌گیر را انتخاب کن</option>
+    </select>
+
+    <button type="submit">ثبت‌نام کشتی‌گیر</button>
+  </form>
+
+  <h3>فهرست ثبت‌نام‌شدگان</h3>
+
+  <input
+    id="registration-search"
+    type="search"
+    placeholder="جست‌وجوی نام کشتی‌گیر یا تیم..."
+  />
+  
+  <label for="registration-list-team-filter">فیلتر فهرست بر اساس تیم</label>
+  <select id="registration-list-team-filter">
+    <option value="">همه تیم‌ها</option>
+  </select>
+  
+  <label for="registration-status-filter">وضعیت ثبت‌نام</label>
+  <select id="registration-status-filter">
+    <option value="">همه وضعیت‌ها</option>
+    <option value="registered">ثبت‌شده</option>
+    <option value="confirmed">تأییدشده</option>
+    <option value="withdrawn">انصراف‌داده</option>
+  </select>
+  
+  <p id="registration-counts" role="status"></p>
+
+
+  <div id="registrations-list"></div>
+</section>
 
 
 <script>
@@ -522,6 +754,10 @@
     ]);
 
     document.getElementById("teams-admin").hidden = false;
+    document.getElementById("registrations-admin").hidden = false;
+
+    await loadRegistrationPanel();
+
     return true;
   }
 
@@ -1355,6 +1591,393 @@ document.getElementById("athlete-search")
 document.getElementById("athlete-team-filter")
   .addEventListener("change", renderAthletes);
     
+
+
+  
+let registrationEvents = [];
+let eventRegistrations = [];
+
+function registrationIsManager() {
+  return Boolean(
+    managerUser &&
+    ["admin", "organizer"].includes(managerRole)
+  );
+}
+
+async function loadRegistrationPanel() {
+  if (!registrationIsManager()) return;
+
+  const message = document.getElementById("registrations-message");
+  message.textContent = "در حال دریافت اطلاعات...";
+
+  const { data, error } = await db
+    .from("events")
+    .select("id, name, start_date, status")
+    .order("start_date", { ascending: false });
+
+  if (error) {
+    console.error("Registration events error:", error.message);
+    message.textContent = "دریافت مسابقات ناموفق بود.";
+    return;
+  }
+
+  registrationEvents = data || [];
+
+  const eventSelect = document.getElementById("registration-event");
+  const previousEvent = eventSelect.value;
+
+  eventSelect.replaceChildren();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "انتخاب مسابقه";
+  eventSelect.appendChild(placeholder);
+
+  for (const event of registrationEvents) {
+    const option = document.createElement("option");
+    option.value = event.id;
+    option.textContent =
+      `${event.name}${event.start_date ? " — " + event.start_date : ""}`;
+    eventSelect.appendChild(option);
+  }
+
+  if (registrationEvents.some(e => e.id === previousEvent)) {
+    eventSelect.value = previousEvent;
+  }
+
+  const teamSelect = document.getElementById("registration-team");
+  const previousTeam = teamSelect.value;
+
+  teamSelect.replaceChildren();
+
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "همه تیم‌ها";
+  teamSelect.appendChild(allOption);
+
+  for (const team of allTeams) {
+    const option = document.createElement("option");
+    option.value = team.id;
+    option.textContent = team.name;
+    teamSelect.appendChild(option);
+  }
+
+  if (allTeams.some(t => t.id === previousTeam)) {
+    teamSelect.value = previousTeam;
+  }
+
+  
+  const listTeamFilter = document.getElementById(
+    "registration-list-team-filter"
+  );
+  const previousListTeam = listTeamFilter.value;
+  
+  listTeamFilter.replaceChildren();
+  
+  const allTeamsOption = document.createElement("option");
+  allTeamsOption.value = "";
+  allTeamsOption.textContent = "همه تیم‌ها";
+  listTeamFilter.appendChild(allTeamsOption);
+  
+  for (const team of allTeams) {
+    const option = document.createElement("option");
+    option.value = team.id;
+    option.textContent = team.name;
+    listTeamFilter.appendChild(option);
+  }
+  
+  if (allTeams.some(team => team.id === previousListTeam)) {
+    listTeamFilter.value = previousListTeam;
+  }
+
+
+  renderRegistrationAthletes();
+  await loadEventRegistrations();
+}
+
+function renderRegistrationAthletes() {
+  const select = document.getElementById("registration-athlete");
+  const selectedTeam = document.getElementById("registration-team").value;
+  const selectedEvent = document.getElementById("registration-event").value;
+
+  const previousAthlete = select.value;
+  select.replaceChildren();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = selectedEvent
+    ? "انتخاب کشتی‌گیر"
+    : "ابتدا مسابقه را انتخاب کن";
+  select.appendChild(placeholder);
+
+  const registeredIds = new Set(
+    eventRegistrations
+        .filter(r => r.event_id === selectedEvent)
+        .map(r => r.athlete_id)
+    );
+
+  const athletes = allAthletes.filter(athlete => {
+    const matchesTeam =
+      !selectedTeam || athlete.team_id === selectedTeam;
+
+    return matchesTeam && !registeredIds.has(athlete.id);
+  });
+
+  for (const athlete of athletes) {
+    const option = document.createElement("option");
+    option.value = athlete.id;
+    option.textContent = athlete.full_name;
+    select.appendChild(option);
+  }
+
+  if (athletes.some(a => a.id === previousAthlete)) {
+    select.value = previousAthlete;
+  }
+}
+
+async function loadEventRegistrations() {
+  if (!registrationIsManager()) return;
+
+  const eventId = document.getElementById("registration-event").value;
+  const message = document.getElementById("registrations-message");
+
+  eventRegistrations = [];
+
+  if (!eventId) {
+    renderRegistrationList();
+    renderRegistrationAthletes();
+    message.textContent = "برای مشاهده ثبت‌نام‌ها، مسابقه‌ای انتخاب کن.";
+    return;
+  }
+
+  const { data, error } = await db
+    .from("event_registrations")
+    .select("id, event_id, athlete_id, team_id, status, created_at")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Registration list error:", error.message);
+    message.textContent = "دریافت ثبت‌نام‌ها ناموفق بود.";
+    renderRegistrationList();
+    return;
+  }
+
+  eventRegistrations = data || [];
+
+  message.textContent = `تعداد ثبت‌نام‌ها: ${
+    eventRegistrations.filter(r => r.status !== "withdrawn").length
+  }`;
+
+  renderRegistrationList();
+  renderRegistrationAthletes();
+}
+
+function renderRegistrationList() {
+  const list = document.getElementById("registrations-list");
+  const query = document.getElementById("registration-search")
+    .value.trim().toLocaleLowerCase();
+
+  const selectedTeam =
+    document.getElementById("registration-list-team-filter").value;
+
+  const selectedStatus =
+    document.getElementById("registration-status-filter").value;
+
+  const countElement = document.getElementById("registration-counts");
+
+  list.replaceChildren();
+
+  const athleteMap = new Map(allAthletes.map(a => [a.id, a]));
+  const teamMap = new Map(allTeams.map(t => [t.id, t]));
+
+  const counts = {
+    registered: eventRegistrations.filter(r => r.status === "registered").length,
+    confirmed: eventRegistrations.filter(r => r.status === "confirmed").length,
+    withdrawn: eventRegistrations.filter(r => r.status === "withdrawn").length
+  };
+
+  countElement.textContent =
+    `ثبت‌شده: ${counts.registered} | ` +
+    `تأییدشده: ${counts.confirmed} | ` +
+    `انصراف‌داده: ${counts.withdrawn} | ` +
+    `مجموع رکوردها: ${eventRegistrations.length}`;
+
+  const statusLabels = {
+    registered: "ثبت‌شده",
+    confirmed: "تأییدشده",
+    withdrawn: "انصراف‌داده"
+  };
+
+  const rows = eventRegistrations.filter(registration => {
+    const athlete = athleteMap.get(registration.athlete_id);
+    const team = teamMap.get(registration.team_id);
+
+    const text =
+      `${athlete?.full_name || ""} ${team?.name || ""}`
+        .toLocaleLowerCase();
+
+    const matchesSearch = text.includes(query);
+    const matchesTeam =
+      !selectedTeam || registration.team_id === selectedTeam;
+    const matchesStatus =
+      !selectedStatus || registration.status === selectedStatus;
+
+    return matchesSearch && matchesTeam && matchesStatus;
+  });
+
+  if (!rows.length) {
+    list.textContent = "ثبت‌نامی مطابق فیلترهای انتخاب‌شده پیدا نشد.";
+    return;
+  }
+
+  for (const registration of rows) {
+    const athlete = athleteMap.get(registration.athlete_id);
+    const team = teamMap.get(registration.team_id);
+
+    const card = document.createElement("article");
+
+    const name = document.createElement("strong");
+    name.textContent = athlete?.full_name || "کشتی‌گیر نامشخص";
+
+    const details = document.createElement("p");
+    details.textContent =
+      `تیم: ${team?.name || "نامشخص"} | ` +
+      `وضعیت: ${statusLabels[registration.status] || registration.status}`;
+
+    card.append(name, details);
+
+    const addAction = (label, status) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        setRegistrationStatus(registration, status);
+      });
+      card.appendChild(button);
+    };
+
+    if (registration.status === "registered") {
+      addAction("تأیید ثبت‌نام", "confirmed");
+      addAction("ثبت انصراف", "withdrawn");
+    } else if (registration.status === "confirmed") {
+      addAction("بازگشت به ثبت‌شده", "registered");
+      addAction("ثبت انصراف", "withdrawn");
+    } else if (registration.status === "withdrawn") {
+      addAction("بازگرداندن به ثبت‌شده", "registered");
+    }
+
+    list.appendChild(card);
+  }
+}
+
+async function setRegistrationStatus(registration, newStatus) {
+  if (!registrationIsManager()) return;
+
+  const statusLabels = {
+    registered: "ثبت‌شده",
+    confirmed: "تأییدشده",
+    withdrawn: "انصراف‌داده"
+  };
+
+  if (!statusLabels[newStatus]) return;
+
+  const athlete = allAthletes.find(
+    a => a.id === registration.athlete_id
+  );
+
+  const confirmed = confirm(
+    `وضعیت ثبت‌نام ${athlete?.full_name || "کشتی‌گیر"} ` +
+    `به «${statusLabels[newStatus]}» تغییر کند؟`
+  );
+
+  if (!confirmed) return;
+
+  const { data, error } = await db
+    .from("event_registrations")
+    .update({ status: newStatus })
+    .eq("id", registration.id)
+    .select("id");
+
+  if (error || !data?.length) {
+    console.error("Status update error:", error?.message);
+    alert("تغییر وضعیت انجام نشد؛ مجوزها و اتصال دیتابیس را بررسی کن.");
+    return;
+  }
+
+  await loadEventRegistrations();
+}
+
+document.getElementById("registration-form")
+  .addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!registrationIsManager()) return;
+
+    const eventId = document.getElementById("registration-event").value;
+    const athleteId = document.getElementById("registration-athlete").value;
+    const message = document.getElementById("registrations-message");
+
+    const athlete = allAthletes.find(a => a.id === athleteId);
+
+    if (!eventId || !athleteId || !athlete) {
+      message.textContent = "مسابقه و کشتی‌گیر را انتخاب کن.";
+      return;
+    }
+
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    button.disabled = true;
+
+    try {
+      const { data, error } = await db
+        .from("event_registrations")
+        .insert([{
+          event_id: eventId,
+          athlete_id: athleteId,
+          team_id: athlete.team_id,
+          status: "registered"
+        }])
+        .select("id");
+
+      if (error) {
+        console.error("Registration insert error:", error.message);
+
+        message.textContent =
+          error.code === "23505"
+            ? "این کشتی‌گیر قبلاً در این مسابقه ثبت‌نام شده است."
+            : "ثبت‌نام ناموفق بود؛ مجوزها و اطلاعات تیم را بررسی کن.";
+
+        return;
+      }
+
+      if (!data?.length) {
+        message.textContent = "ثبت‌نام تأیید نشد.";
+        return;
+      }
+
+      message.textContent = "ثبت‌نام با موفقیت انجام شد.";
+      await loadEventRegistrations();
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+document.getElementById("registration-event")
+  .addEventListener("change", loadEventRegistrations);
+
+document.getElementById("registration-team")
+  .addEventListener("change", renderRegistrationAthletes);
+
+document.getElementById("registration-search")
+  .addEventListener("input", renderRegistrationList);
+
+document.getElementById("registration-list-team-filter")
+  .addEventListener("change", renderRegistrationList);
+
+document.getElementById("registration-status-filter")
+  .addEventListener("change", renderRegistrationList);
+
+
 async function restoreSession() {
 const { data, error } = await db.auth.getSession();
 

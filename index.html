@@ -5,6 +5,35 @@
 <meta name="theme-color" content="#0b3b2e"><title>کشتی‌یار | مدیریت مسابقات کشتی</title>
 <link rel="stylesheet" href="assets/style.css">
 </head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = "sb_publishable_IgIox34puZxRyU15VGLd9w_k4MUlKaK";
+  const SUPABASE_KEY = "https://wjeygfiiuwjzgvejvrry.supabase.co/rest/v1/";
+
+  const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  async function testKoshtiyarDatabase() {
+    const { data, error } = await db
+      .from("events")
+      .select("id, name, status")
+      .limit(5);
+
+    if (error) {
+      console.error("خطای اتصال:", error.message);
+      alert("اتصال انجام نشد: " + error.message);
+      return;
+    }
+
+    console.log("اتصال موفق بود:", data);
+    alert("اتصال به دیتابیس موفق بود!");
+  }
+
+  testKoshtiyarDatabase();
+</script>
 <body>
 <header><div class="brand"><b class="mark">ک</b><div><strong>کشتی‌یار</strong><small>سامانه مدیریت مسابقات کشتی</small></div></div><span class="status">● نسخه آزمایشی</span></header>
 <main>

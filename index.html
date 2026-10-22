@@ -4,6 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0b3b2e"><title>کشتی‌یار | مدیریت مسابقات کشتی</title>
 <link rel="stylesheet" href="assets/style.css">
+
 </head>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -126,6 +127,195 @@
     display: grid;
     gap: 8px;
   }
+</style>
+
+<style>
+    /* Koshtiyar - Teams & Athletes Admin */
+    #teams-admin {
+    --ky-primary: #166534;
+    --ky-primary-hover: #14532d;
+    --ky-bg: #f4f7f5;
+    --ky-surface: #ffffff;
+    --ky-text: #172b24;
+    --ky-muted: #64756c;
+    --ky-border: #dce7df;
+    --ky-radius: 14px;
+
+    direction: rtl;
+    box-sizing: border-box;
+    width: min(100% - 32px, 1100px);
+    margin: 32px auto;
+    padding: 28px;
+    color: var(--ky-text);
+    background: var(--ky-bg);
+    border: 1px solid var(--ky-border);
+    border-radius: 20px;
+    font-family: Tahoma, Arial, sans-serif;
+    line-height: 1.8;
+    }
+
+    #teams-admin *,
+    #teams-admin *::before,
+    #teams-admin *::after {
+    box-sizing: border-box;
+    }
+
+    #teams-admin h2 {
+    margin: 0 0 16px;
+    font-size: 23px;
+    font-weight: 800;
+    }
+
+    #teams-admin h3 {
+    margin: 26px 0 14px;
+    font-size: 18px;
+    font-weight: 750;
+    }
+
+    #teams-admin label {
+    display: block;
+    margin: 12px 0 5px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ky-muted);
+    }
+
+    #teams-admin input,
+    #teams-admin select {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 13px;
+    border: 1px solid var(--ky-border);
+    border-radius: 10px;
+    background: var(--ky-surface);
+    color: var(--ky-text);
+    font: inherit;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    }
+
+    #teams-admin input:focus,
+    #teams-admin select:focus {
+    border-color: var(--ky-primary);
+    box-shadow: 0 0 0 3px #1665341c;
+    }
+
+    #teams-admin button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 9px 16px;
+    margin: 7px 0;
+    border: 0;
+    border-radius: 10px;
+    background: var(--ky-primary);
+    color: white;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+    }
+
+    #teams-admin button:hover {
+    background: var(--ky-primary-hover);
+    }
+
+    #teams-admin button:active {
+    transform: scale(.98);
+    }
+
+    #teams-admin button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    }
+
+    #teams-admin #team-form,
+    #teams-admin #athlete-form {
+    padding: 20px;
+    border: 1px solid var(--ky-border);
+    border-radius: var(--ky-radius);
+    background: var(--ky-surface);
+    box-shadow: 0 4px 18px #172b2408;
+    }
+
+    #teams-admin #teams-list,
+    #teams-admin #athletes-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+    }
+
+    #teams-admin .event-card,
+    #teams-admin #teams-list article,
+    #teams-admin #athletes-list article {
+    min-width: 0;
+    padding: 17px;
+    border: 1px solid var(--ky-border);
+    border-radius: var(--ky-radius);
+    background: var(--ky-surface);
+    box-shadow: 0 4px 16px #172b2408;
+    overflow-wrap: anywhere;
+    }
+
+    #teams-admin #teams-list strong,
+    #teams-admin #athletes-list strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 15px;
+    }
+
+    #teams-admin #athletes-list p {
+    margin: 6px 0 0;
+    color: var(--ky-muted);
+    font-size: 13px;
+    }
+
+    #teams-admin #team-search,
+    #teams-admin #athlete-search {
+    margin-bottom: 10px;
+    }
+
+    #teams-admin hr {
+    border: 0;
+    border-top: 1px solid var(--ky-border);
+    }
+
+    #teams-admin [role="status"] {
+    color: var(--ky-muted);
+    font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+    #teams-admin {
+        width: calc(100% - 20px);
+        margin: 14px auto;
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    #teams-admin h2 {
+        font-size: 20px;
+    }
+
+    #teams-admin #teams-list,
+    #teams-admin #athletes-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #teams-admin #team-form,
+    #teams-admin #athlete-form {
+        padding: 14px;
+    }
+
+    #teams-admin button {
+        max-width: 100%;
+    }
+    }
+
 </style>
 
 <section id="koshtiyar-login">

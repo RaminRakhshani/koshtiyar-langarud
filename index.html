@@ -434,6 +434,12 @@
   </form>
 
   <h3>فهرست کشتی‌گیران</h3>
+    
+  <label for="athlete-team-filter">فیلتر بر اساس تیم</label>
+  <select id="athlete-team-filter">
+  <option value="">همه تیم‌ها</option>
+  </select>
+
   <input id="athlete-search" type="search"
     placeholder="جست‌وجوی نام کشتی‌گیر یا تیم..."
     style="display:block;width:100%;padding:10px;margin:8px 0" />
@@ -911,22 +917,53 @@ async function loadTeamsAndAthletes() {
   updateTeamOptions();
 }
 
+
 function updateTeamOptions() {
   const select = document.getElementById("athlete-team");
+  const filter = document.getElementById("athlete-team-filter");
+
+  const previousTeam = select.value;
+  const previousFilter = filter.value;
+
   select.replaceChildren();
+  filter.replaceChildren();
 
   const placeholder = document.createElement("option");
   placeholder.value = "";
   placeholder.textContent = "انتخاب تیم";
   select.appendChild(placeholder);
 
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "همه تیم‌ها";
+  filter.appendChild(allOption);
+
   for (const team of allTeams) {
     const option = document.createElement("option");
-    option.value = team.id;
+    option.value = String(team.id);
     option.textContent = team.name;
     select.appendChild(option);
+
+    const filterOption = document.createElement("option");
+    filterOption.value = String(team.id);
+    filterOption.textContent = team.name;
+    filter.appendChild(filterOption);
   }
+
+  if (allTeams.some(team => String(team.id) === previousTeam)) {
+    select.value = previousTeam;
+  }
+
+  if (
+    previousFilter === "" ||
+    allTeams.some(team => String(team.id) === previousFilter)
+  ) {
+    filter.value = previousFilter;
+  }
+
+  renderAthletes();
 }
+
 
 function renderTeams() {
   const list = document.getElementById("teams-list");
@@ -993,10 +1030,14 @@ function renderTeams() {
   }
 }
 
+
 function renderAthletes() {
   const list = document.getElementById("athletes-list");
   const query = document.getElementById("athlete-search")
     .value.trim().toLocaleLowerCase();
+
+  const selectedTeam =
+    document.getElementById("athlete-team-filter").value;
 
   list.replaceChildren();
 
@@ -1005,15 +1046,22 @@ function renderAthletes() {
   );
 
   const filtered = allAthletes.filter(athlete => {
-    const teamName = teamNames.get(String(athlete.team_id)) || "";
-    const text =
-      `${athlete.full_name || ""} ${teamName}`.toLocaleLowerCase();
+    const teamId = String(athlete.team_id);
+    const teamName = teamNames.get(teamId) || "";
 
-    return text.includes(query);
+    const matchesQuery =
+      `${athlete.full_name || ""} ${teamName}`
+        .toLocaleLowerCase()
+        .includes(query);
+
+    const matchesTeam =
+      !selectedTeam || teamId === selectedTeam;
+
+    return matchesQuery && matchesTeam;
   });
 
   if (!filtered.length) {
-    list.textContent = "کشتی‌گیری پیدا نشد.";
+    list.textContent = "کشتی‌گیری با این مشخصات پیدا نشد.";
     return;
   }
 
@@ -1030,9 +1078,188 @@ function renderAthletes() {
       `تیم: ${teamNames.get(String(athlete.team_id)) || "نامشخص"} | ` +
       `تاریخ تولد: ${athlete.birth_date || "ثبت نشده"}`;
 
-    card.append(name, details);
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.textContent = "ویرایش";
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.textContent = "حذف";
+    deleteButton.style.marginRight = "8px";
+
+    editButton.addEventListener("click", () => {
+      if (!isManager()) return;
+      showAthleteEditor(athlete, card);
+    });
+
+    deleteButton.addEventListener("click", async () => {
+      if (!isManager()) return;
+
+      const confirmed = confirm(
+        `آیا از حذف کشتی‌گیر «${athlete.full_name}» مطمئن هستی؟\n` +
+        "این عملیات ممکن است در صورت وابستگی به مسابقات مجاز نباشد."
+      );
+
+      if (!confirmed) return;
+
+      deleteButton.disabled = true;
+
+      try {
+        const { data, error } = await db
+          .from("athletes")
+          .delete()
+          .eq("id", athlete.id)
+          .select("id");
+
+        if (error) {
+          console.error("Athlete delete error:", error.message);
+          alert(
+            "حذف انجام نشد. ممکن است مجوز دیتابیس کافی نباشد " +
+            "یا این کشتی‌گیر به رکوردهای مسابقات وابسته باشد."
+          );
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          alert(
+            "هیچ رکوردی حذف نشد. مجوز حذف یا وجود رکورد را بررسی کن."
+          );
+          return;
+        }
+
+        await loadTeamsAndAthletes();
+      } finally {
+        deleteButton.disabled = false;
+      }
+    });
+
+    card.append(name, details, editButton, deleteButton);
     list.appendChild(card);
   }
+}
+
+
+function showAthleteEditor(athlete, card) {
+  if (!isManager()) return;
+
+  card.replaceChildren();
+
+  const form = document.createElement("form");
+  form.style.cssText =
+    "display:grid;gap:10px;padding:8px 0";
+
+  const nameLabel = document.createElement("label");
+  nameLabel.textContent = "نام و نام خانوادگی";
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.required = true;
+  nameInput.maxLength = 150;
+  nameInput.value = athlete.full_name || "";
+  nameInput.style.cssText = "width:100%;padding:10px";
+
+  nameLabel.appendChild(nameInput);
+
+  const teamLabel = document.createElement("label");
+  teamLabel.textContent = "تیم";
+
+  const teamSelect = document.createElement("select");
+  teamSelect.required = true;
+  teamSelect.style.cssText = "width:100%;padding:10px";
+
+  for (const team of allTeams) {
+    const option = document.createElement("option");
+    option.value = String(team.id);
+    option.textContent = team.name;
+    teamSelect.appendChild(option);
+  }
+
+  teamSelect.value = String(athlete.team_id);
+
+  const birthLabel = document.createElement("label");
+  birthLabel.textContent = "تاریخ تولد";
+
+  const birthInput = document.createElement("input");
+  birthInput.type = "date";
+  birthInput.value = athlete.birth_date || "";
+  birthInput.style.cssText = "width:100%;padding:10px";
+
+  birthLabel.appendChild(birthInput);
+
+  const saveButton = document.createElement("button");
+  saveButton.type = "submit";
+  saveButton.textContent = "ذخیره تغییرات";
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.textContent = "انصراف";
+
+  cancelButton.addEventListener("click", () => {
+    renderAthletes();
+  });
+
+  form.append(
+    nameLabel,
+    teamLabel,
+    teamSelect,
+    birthLabel,
+    birthInput,
+    saveButton,
+    cancelButton
+  );
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!isManager()) return;
+
+    const full_name = nameInput.value.trim();
+    const team_id = teamSelect.value;
+    const birth_date = birthInput.value || null;
+
+    if (!full_name || full_name.length > 150 || !team_id) {
+      alert("نام معتبر و انتخاب تیم الزامی است.");
+      return;
+    }
+
+    saveButton.disabled = true;
+    cancelButton.disabled = true;
+
+    try {
+      const { data, error } = await db
+        .from("athletes")
+        .update({
+          full_name,
+          team_id,
+          birth_date
+        })
+        .eq("id", athlete.id)
+        .select("id");
+
+      if (error) {
+        console.error("Athlete update error:", error.message);
+        alert(
+          "ویرایش ذخیره نشد. اتصال دیتابیس و مجوزهای RLS را بررسی کن."
+        );
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        alert(
+          "رکوردی تغییر نکرد. ممکن است مجوز ویرایش نداشته باشی."
+        );
+        return;
+      }
+
+      await loadTeamsAndAthletes();
+    } finally {
+      saveButton.disabled = false;
+      cancelButton.disabled = false;
+    }
+  });
+
+  card.appendChild(form);
+  nameInput.focus();
 }
 
 teamForm.addEventListener("submit", async event => {
@@ -1122,7 +1349,12 @@ document.getElementById("team-search")
 document.getElementById("athlete-search")
   .addEventListener("input", renderAthletes);
 
+document.getElementById("athlete-search")
+  .addEventListener("input", renderAthletes);
 
+document.getElementById("athlete-team-filter")
+  .addEventListener("change", renderAthletes);
+    
 async function restoreSession() {
 const { data, error } = await db.auth.getSession();
 
